@@ -23,9 +23,15 @@
                                           🔊 *spoken aloud*
 ```
 
+*Examples show Frostwig (penguin) — your buddy's name and personality will be different.*
+
 <br>
 
 **You already talk to your buddy in Claude Code. This makes it talk back — out loud.**
+
+**Works with all 18 species.** Penguin, dragon, cat, ghost, robot, owl — whatever `/buddy` gave you.
+
+
 
 [CLI Mode](#cli-mode) · [VS Code Extension](#vs-code-extension) · [How It Works](#how-it-works) · [Install](#install)
 
