@@ -1,7 +1,7 @@
 {
   "name": "frostwig-cli",
   "version": "1.0.0",
-  "description": "Interactive conversational mode for your Claude Code Buddy penguin",
+  "description": "Give your Claude Code Buddy a voice. Interactive TTS conversation for terminal pets.",
   "bin": {
     "frostwig": "./bin/frostwig.mjs"
   },
@@ -9,9 +9,11 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "readline": "*"
-  },
+  "keywords": ["claude", "buddy", "tts", "terminal", "pet", "ascii", "cli"],
   "author": "James Benton Jr.",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BMC-INC/frostwig-cli.git"
+  }
 }
