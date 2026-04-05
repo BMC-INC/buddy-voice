@@ -1,0 +1,17 @@
+{
+  "name": "frostwig-cli",
+  "version": "1.0.0",
+  "description": "Interactive conversational mode for your Claude Code Buddy penguin",
+  "bin": {
+    "frostwig": "./bin/frostwig.mjs"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "readline": "*"
+  },
+  "author": "James Benton Jr.",
+  "license": "MIT"
+}
