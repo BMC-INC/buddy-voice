@@ -96,7 +96,26 @@ Hands-free. Monitors your terminal while you code with Claude Code. When your bu
 
 ## Install
 
-### CLI
+### Easiest: CLAUDE.md Instruction (Recommended)
+
+No install needed. Add this to your `~/CLAUDE.md` (global) or any project's `CLAUDE.md`:
+
+```markdown
+## Buddy Voice
+
+When the companion (any /buddy pet) speaks — whether the user addresses
+it by name or it drops a comment — run the response through macOS TTS:
+
+  say -v Samantha -r 180 "<response text>"
+
+Fire and forget. Don't await. Just speak it every time the buddy responds.
+```
+
+That's it. Next Claude Code session, your buddy talks out loud. No tools, no extensions, no dependencies. Claude sees the instruction and speaks every buddy response automatically.
+
+**Change the voice:** Replace `Samantha` with any macOS voice (`Daniel` for deep, `Karen` for smooth, `Fred` for quirky). Run `say -v '?'` to see all options.
+
+### CLI (Standalone Conversations)
 
 ```bash
 git clone https://github.com/BMC-INC/buddy-voice.git
