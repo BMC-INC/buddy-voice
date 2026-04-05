@@ -1,0 +1,109 @@
+{
+  "name": "frostwig-voice",
+  "displayName": "Frostwig Voice - Talk to Your Claude Code Buddy",
+  "description": "Gives your Claude Code Buddy pet a voice. Monitors terminal for buddy speech bubbles and speaks them aloud.",
+  "version": "1.0.0",
+  "publisher": "execlayer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BMC-INC/frostwig-vscode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["claude", "claude-code", "buddy", "tts", "voice", "terminal", "pet", "companion"],
+  "activationEvents": [
+    "onDidOpenTerminal"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "frostwig.toggleVoice",
+        "title": "Frostwig: Toggle Voice"
+      },
+      {
+        "command": "frostwig.changeVoice",
+        "title": "Frostwig: Change Voice"
+      },
+      {
+        "command": "frostwig.testVoice",
+        "title": "Frostwig: Test Voice"
+      },
+      {
+        "command": "frostwig.showStats",
+        "title": "Frostwig: Show Buddy Stats"
+      },
+      {
+        "command": "frostwig.mute",
+        "title": "Frostwig: Mute"
+      },
+      {
+        "command": "frostwig.unmute",
+        "title": "Frostwig: Unmute"
+      }
+    ],
+    "configuration": {
+      "title": "Frostwig Voice",
+      "properties": {
+        "frostwig.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Frostwig voice output"
+        },
+        "frostwig.voice": {
+          "type": "string",
+          "default": "Samantha",
+          "description": "macOS voice name for TTS"
+        },
+        "frostwig.rate": {
+          "type": "number",
+          "default": 180,
+          "description": "Speech rate (words per minute)"
+        },
+        "frostwig.volume": {
+          "type": "number",
+          "default": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Volume level"
+        },
+        "frostwig.muteOnFocus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Only speak when terminal is focused"
+        },
+        "frostwig.buddyName": {
+          "type": "string",
+          "default": "",
+          "description": "Override buddy name detection (leave empty for auto-detect)"
+        },
+        "frostwig.showNotification": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show VS Code notification with bubble text"
+        },
+        "frostwig.soundEffect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play a subtle chirp before speaking"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

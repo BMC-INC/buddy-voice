@@ -1,0 +1,14 @@
+{
+  "name": "@frostwig/cli",
+  "version": "1.0.0",
+  "description": "Talk to your Claude Code buddy with voice",
+  "bin": {
+    "frostwig": "./bin/frostwig.mjs"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "James Benton Jr.",
+  "license": "MIT"
+}

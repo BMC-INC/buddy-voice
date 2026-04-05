@@ -1,83 +1,58 @@
-# frostwig-cli
+# Frostwig
 
-Give your Claude Code Buddy a voice. Interactive conversational mode with text-to-speech for terminal pets.
+Give your Claude Code buddy a voice.
 
-Built for the [Claude Code Buddy system](https://docs.anthropic.com) launched April 2026. Works with all 18 species.
+You can already talk to your buddy by name in Claude Code — just type "Frostwig, what do you think?" and Claude steps aside while your buddy responds in character. That's built into Claude Code natively. The problem is those responses are text only. Frostwig makes them audible.
 
-## Demo
+## Two Modes
 
-```
-  ___________________________
- | Why is that variable called |
- | "temp2"? Have some self    |
- | respect.                    |
-  ---------------------------
-        /
-     (o>
-    /|  \
-     | |
-    / | \
-   ~~ ~~
-```
+### CLI Mode
 
-## Install
+A lightweight REPL where you have a dedicated voice conversation with your buddy. You type, buddy responds in character via the Anthropic API, and the response is spoken aloud through macOS `say`.
 
 ```bash
-npm install -g frostwig-cli
-
-# Set your Anthropic API key
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Talk to your buddy
+cd packages/cli
+npm link
 frostwig
 ```
+
+Requires `ANTHROPIC_API_KEY` environment variable.
+
+Commands: `/voice on|off`, `/voice set <name>`, `/voice list`, `/stats`, `/pet`, `/mute`, `/quit`
+
+### VS Code Extension Mode
+
+Monitors the terminal where Claude Code is running. When your buddy drops a speech bubble or responds to you by name, the extension catches that text and speaks it. Use this when you're coding and want to hear buddy commentary hands-free.
+
+```bash
+cd packages/vscode
+npm install
+npm run compile
+npx vsce package
+code --install-extension frostwig-voice-1.0.0.vsix
+```
+
+Once installed, open a terminal in VS Code with Claude Code running. Your buddy's speech gets spoken automatically. Click the status bar item to toggle voice on/off.
 
 ## Requirements
 
 - Node.js 18+
-- `ANTHROPIC_API_KEY` environment variable
-- Claude Code with `/buddy` activated (so your companion config exists in `~/.claude.json`)
-- macOS `say` command (optional, for voice output)
+- macOS `say` command (for voice output)
+- `ANTHROPIC_API_KEY` env var (CLI mode only)
+- Claude Code with `/buddy` activated
 
-## How It Works
+## What This Does NOT Do
 
-1. Reads your buddy companion config from `~/.claude.json`
-2. Extracts your buddy's name, species, rarity, personality, and stats
-3. Builds a character prompt so Claude responds as your buddy, not as itself
-4. Opens an interactive REPL with ASCII art and speech bubbles
-5. Pipes responses through macOS `say` for voice output
-
-## Commands
-
-| Command | What it does |
-|---|---|
-| `/stats` | Show stat card with attribute bars |
-| `/pet` | Pet your buddy (hearts) |
-| `/sprite` | Animated ASCII sprite |
-| `/mood` | Current mood based on conversation |
-| `/voice on\|off` | Toggle TTS |
-| `/voice set <n>` | Change macOS voice |
-| `/voice list` | List available voices |
-| `/clear` | Reset conversation |
-| `/quit` | Exit |
-
-## Flags
-
-```bash
-frostwig              # Default, voice enabled
-frostwig --no-voice   # Text only
-frostwig --voice=Fred # Specific macOS voice
-```
-
-## Species Support
-
-Works with all 18 Claude Code Buddy species. Each species gets a default voice mapped to its vibe. You can always override with `/voice set`.
+- Does not draw characters or ASCII art
+- Does not modify Claude Code's behavior
+- Does not intercept or alter terminal input
+- Does not collect telemetry
 
 ## About
 
 Built by [James Benton Jr.](https://linkedin.com/in/james-benton-execlayer/) / [ExecLayer Inc.](https://github.com/BMC-INC)
 
-This project is not affiliated with or endorsed by Anthropic. It reads user-owned companion config data and builds an independent conversational layer on top of it.
+Not affiliated with or endorsed by Anthropic.
 
 ## License
 
