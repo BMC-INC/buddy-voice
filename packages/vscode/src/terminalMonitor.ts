@@ -7,15 +7,27 @@ import { BubbleParser, ParsedBubble } from './bubbleParser';
 export type BubbleCallback = (bubble: ParsedBubble) => void;
 
 // Strip ANSI escape codes from raw terminal data.
-// Cursor-positioning sequences (H, f) are replaced with a newline
-// so that line boundaries survive; all other codes are removed.
+// Row-changing cursor moves → newline (preserves line structure).
+// Same-row cursor moves → space (preserves word boundaries).
+// Tracks the last cursor row so we can tell the difference.
 function stripAnsi(text: string): string {
-    return text
-        .replace(/\x1b\[[0-9;]*[Hf]/g, '\n')          // cursor position → newline (preserves line structure)
+    let lastRow = -1;
+    // Phase 1: replace cursor-position sequences intelligently
+    let out = text.replace(/\x1b\[([0-9;]*)([Hf])/g, (_m, params) => {
+        const parts = (params || '').split(';');
+        const row = parseInt(parts[0], 10) || 1;
+        if (row !== lastRow) {
+            lastRow = row;
+            return '\n';   // new row → line break
+        }
+        return ' ';        // same row, different column → word space
+    });
+    // Phase 2: strip remaining ANSI sequences
+    out = out
         .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')        // remaining CSI (colors, etc.)
         .replace(/\x1b\][^\x07]*\x07/g, '')             // OSC (title, etc.)
         .replace(/\x1b\][^\x1b]*\x1b\\/g, '');          // OSC with ST terminator
-    // NOTE: do NOT collapse whitespace here — the border regex needs intact lines
+    return out;
 }
 
 export class TerminalMonitor {
@@ -28,6 +40,9 @@ export class TerminalMonitor {
     private logPath: string = '';
     private spokenTexts: Set<string> = new Set();
     private ready: boolean = false;
+    private rawBuffer: string = '';
+    private scanTimer: ReturnType<typeof setTimeout> | null = null;
+    private static SCAN_DELAY_MS = 300; // wait for all chunks to arrive
 
     constructor(buddyName: string, callback: BubbleCallback) {
         this.parser = new BubbleParser(buddyName);
@@ -62,12 +77,16 @@ export class TerminalMonitor {
             const disposable = onDidWrite((e: { terminal: vscode.Terminal; data: string }) => {
                 if (!this.ready) return;
 
-                // Process raw data directly for bubble detection.
-                // VTermScreen was losing bubble content because subsequent
-                // spinner frames clear rows with ESC[2K before the debounced
-                // scan could read them. Instead, we scan each raw data chunk
-                // immediately for box-drawing bubble patterns.
-                this.scanRawData(e.data);
+                // Accumulate raw data chunks, then scan after a short
+                // debounce so the full bubble (which may arrive across
+                // multiple onDidWrite events) is present in one pass.
+                this.rawBuffer += e.data;
+                if (this.scanTimer) clearTimeout(this.scanTimer);
+                this.scanTimer = setTimeout(() => {
+                    const data = this.rawBuffer;
+                    this.rawBuffer = '';
+                    this.scanRawData(data);
+                }, TerminalMonitor.SCAN_DELAY_MS);
             });
 
             this.disposables.push(disposable);
@@ -276,6 +295,8 @@ export class TerminalMonitor {
     dispose(): void {
         for (const d of this.disposables) d.dispose();
         this.disposables = [];
+        if (this.scanTimer) { clearTimeout(this.scanTimer); this.scanTimer = null; }
+        this.rawBuffer = '';
         if (this.logWatcher) {
             this.logWatcher.close();
             this.logWatcher = null;
