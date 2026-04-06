@@ -55,7 +55,7 @@
         },
         "frostwig.voice": {
           "type": "string",
-          "default": "Samantha",
+          "default": "Daniel",
           "description": "macOS voice name for TTS"
         },
         "frostwig.rate": {

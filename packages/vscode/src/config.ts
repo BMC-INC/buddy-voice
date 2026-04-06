@@ -41,7 +41,7 @@ export function getBuddyName(): string {
 }
 
 export function getVoiceSetting(): string {
-    return vscode.workspace.getConfiguration('frostwig').get('voice', 'Samantha');
+    return vscode.workspace.getConfiguration('frostwig').get('voice', 'Daniel');
 }
 
 export function isEnabled(): boolean {
