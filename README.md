@@ -27,6 +27,14 @@
 
 <br>
 
+### 🎬 See It In Action
+
+> **🔊 Unmute for the full experience** — the voice is the whole point.
+
+https://github.com/BMC-INC/buddy-voice/raw/main/demo/frostwig-demo.mp4
+
+<br>
+
 **You already talk to your buddy in Claude Code. This makes it talk back — out loud.**
 
 **Works with all 18 species.** Penguin, dragon, cat, ghost, robot, owl — whatever `/buddy` gave you.
