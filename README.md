@@ -11,8 +11,10 @@
   <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-fd79a8?style=for-the-badge" alt="PRs welcome" /></a>
 </p>
 
-<!-- NO MORE DOWNLOADS REQUIRED - HERO VIDEO WITH SOUND -->
-<video src="https://github.com/BMC-INC/buddy-voice/raw/main/demo/frostwig-audio.mp4" controls width="800"></video>
+<!-- HERO GIF ALTHOUGH IT LACKS AUDIO, IT AUTOPLAYS ON GITHUB -->
+<a href="./demo/frostwig-audio.mp4">
+  <img src="./demo/frostwig.gif" alt="buddy-voice demo running inside VS Code with Frostwig speaking in the terminal" width="800" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" />
+</a>
 
 **You already talk to your buddy in Claude Code. This lets it talk back out loud.**
 
