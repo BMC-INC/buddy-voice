@@ -126,13 +126,17 @@ export class TerminalMonitor {
 
         this.debugFile(`RAW HIT: chunk has box chars (len=${data.length})`);
 
-        // Split into lines (cursor positioning was converted to newlines)
+        // Log first 300 chars of stripped text for debugging
+        this.debugFile(`STRIPPED: "${stripped.substring(0, 300).replace(/\n/g, '\\n')}"`);
+
+        // Split into lines (row-change cursor moves were converted to newlines)
         const rawLines = stripped.split('\n').map(l => l.trim()).filter(Boolean);
 
         // Find bubble structure: top border → content lines → bottom border
-        const topRe = /[┌╭┏╔][─━═┄┈]+[┐╮┓╗]/;
-        const bottomRe = /[└╰┗╚][─━═┄┈]+[┘╯┛╝]/;
-        const contentRe = /^[│┃║]\s*(.*?)\s*[│┃║]/;
+        // Allow spaces between border chars (cursor positioning inserts spaces)
+        const topRe = /[┌╭┏╔]\s*[─━═┄┈][\s─━═┄┈]*[┐╮┓╗]/;
+        const bottomRe = /[└╰┗╚]\s*[─━═┄┈][\s─━═┄┈]*[┘╯┛╝]/;
+        const contentRe = /[│┃║]\s*(.*?)\s*[│┃║]/;
 
         let inBubble = false;
         const bubbleLines: string[] = [];
