@@ -1,6 +1,8 @@
-// ANSI escape code stripper
+// ANSI escape code stripper — covers SGR, cursor, private modes, and OSC
 function stripAnsi(text: string): string {
-    return text.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\[\?[0-9;]*[a-zA-Z]/g, '');
+    return text.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+               .replace(/\x1b\[\?[0-9;]*[a-zA-Z]/g, '')
+               .replace(/\x1b\][^\x07]*\x07/g, '');
 }
 
 export interface ParsedBubble {
@@ -23,10 +25,10 @@ export class BubbleParser {
         /\[o_o\]\s*"(.+?)"/,      // robot
     ];
 
-    // Bubble boundaries
-    private static BUBBLE_TOP = /^\s*_{3,}\s*$/;
-    private static BUBBLE_LINE = /^\s*\|\s*(.+?)\s*\|\s*$/;
-    private static BUBBLE_BOTTOM = /^\s*-{3,}\s*$/;
+    // Bubble boundaries — ASCII and Unicode box-drawing
+    private static BUBBLE_TOP = /^\s*[_┌╭┏╔][_─━═┄┈][_─━═┄┈]+[_┐╮┓╗]?/;
+    private static BUBBLE_LINE = /^\s*[|│┃║]\s*(.+?)\s*[|│┃║]/;
+    private static BUBBLE_BOTTOM = /^\s*[-└╰┗╚][-─━═┄┈][-─━═┄┈]+[-┘╯┛╝]?/;
 
     constructor(buddyName: string = 'Frostwig') {
         this.buddyName = buddyName;

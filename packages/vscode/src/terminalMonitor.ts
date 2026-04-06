@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { BubbleParser, ParsedBubble } from './bubbleParser';
+import { VTermScreen } from './vtScreen';
 
 export type BubbleCallback = (bubble: ParsedBubble) => void;
 
@@ -14,65 +15,85 @@ export class TerminalMonitor {
     private logWatcher: fs.FSWatcher | null = null;
     private lastLogSize: number = 0;
     private logPath: string = '';
+    private screen: VTermScreen;
+    private parseTimer: ReturnType<typeof setTimeout> | null = null;
+    private spokenTexts: Set<string> = new Set();
+    private ready: boolean = false;
 
     constructor(buddyName: string, callback: BubbleCallback) {
         this.parser = new BubbleParser(buddyName);
         this.callback = callback;
+        this.screen = new VTermScreen();
     }
 
-    /**
-     * Start monitoring. Returns the active mode.
-     */
     start(): string {
-        // Try Option A: Terminal data events (proposed API)
         if (this.tryTerminalDataAPI()) {
             this.mode = 'terminal-data';
             return this.mode;
         }
-
-        // Fall back to Option C: Log file watcher
         if (this.tryLogWatcher()) {
             this.mode = 'log-watcher';
             return this.mode;
         }
-
         this.mode = 'none';
         return this.mode;
     }
 
     private tryTerminalDataAPI(): boolean {
         try {
-            // onDidWriteTerminalData is a proposed API
-            // Check if it's available on the window object
             const onDidWrite = (vscode.window as any).onDidWriteTerminalData;
-            if (typeof onDidWrite === 'function') {
-                const disposable = onDidWrite((e: { terminal: vscode.Terminal; data: string }) => {
-                    const bubbles = this.parser.parse(e.data);
-                    for (const bubble of bubbles) {
-                        this.callback(bubble);
-                    }
-                });
-                this.disposables.push(disposable);
-                return true;
-            }
-            return false;
+            if (typeof onDidWrite !== 'function') return false;
+
+            // Grace period: ignore the initial terminal buffer dump
+            setTimeout(() => {
+                this.screen.reset();
+                this.parser.reset();
+                this.ready = true;
+            }, 1500);
+
+            const disposable = onDidWrite((e: { terminal: vscode.Terminal; data: string }) => {
+                this.screen.feed(e.data);
+                if (!this.ready) return;
+
+                // Debounce: wait for the TUI render frame to finish
+                if (this.parseTimer) clearTimeout(this.parseTimer);
+                this.parseTimer = setTimeout(() => this.scanScreen(), 150);
+            });
+
+            this.disposables.push(disposable);
+            return true;
         } catch {
             return false;
         }
     }
 
+    private scanScreen(): void {
+        this.parser.reset();
+        const screenText = this.screen.getScreen();
+        if (!screenText.trim()) return;
+
+        const bubbles = this.parser.parse(screenText);
+        for (const bubble of bubbles) {
+            const key = bubble.text.trim();
+            if (!key || this.spokenTexts.has(key)) continue;
+            this.spokenTexts.add(key);
+            if (this.spokenTexts.size > 200) {
+                const first = this.spokenTexts.values().next().value;
+                if (first !== undefined) this.spokenTexts.delete(first);
+            }
+            this.callback(bubble);
+        }
+    }
+
     private tryLogWatcher(): boolean {
-        // Watch Claude Code's log directory for buddy output
         const claudeDir = path.join(os.homedir(), '.claude');
         if (!fs.existsSync(claudeDir)) return false;
 
-        // Look for any log files that might contain buddy output
         const logCandidates = [
             path.join(claudeDir, 'buddy.log'),
             path.join(claudeDir, 'companion.log'),
         ];
 
-        // Also check for the most recent log file in .claude/logs/
         const logsDir = path.join(claudeDir, 'logs');
         if (fs.existsSync(logsDir)) {
             try {
@@ -95,20 +116,16 @@ export class TerminalMonitor {
                 try {
                     const stat = fs.statSync(candidate);
                     this.lastLogSize = stat.size;
-
                     this.logWatcher = fs.watch(candidate, (eventType) => {
-                        if (eventType === 'change') {
-                            this.readNewLogContent();
-                        }
+                        if (eventType === 'change') this.readNewLogContent();
                     });
                     return true;
                 } catch { continue; }
             }
         }
 
-        // Watch the .claude directory itself for new files
         try {
-            this.logWatcher = fs.watch(claudeDir, (eventType, filename) => {
+            this.logWatcher = fs.watch(claudeDir, (_eventType, filename) => {
                 if (filename && (filename.includes('buddy') || filename.includes('companion'))) {
                     const filePath = path.join(claudeDir, filename);
                     if (fs.existsSync(filePath)) {
@@ -154,14 +171,18 @@ export class TerminalMonitor {
     }
 
     dispose(): void {
-        for (const d of this.disposables) {
-            d.dispose();
+        if (this.parseTimer) {
+            clearTimeout(this.parseTimer);
+            this.parseTimer = null;
         }
+        for (const d of this.disposables) d.dispose();
         this.disposables = [];
         if (this.logWatcher) {
             this.logWatcher.close();
             this.logWatcher = null;
         }
         this.parser.reset();
+        this.screen.reset();
+        this.spokenTexts.clear();
     }
 }

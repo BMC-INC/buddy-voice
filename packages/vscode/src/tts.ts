@@ -8,6 +8,7 @@ export class TTSEngine {
     private muted: boolean = false;
     private voice: string = 'Samantha';
     private rate: number = 180;
+    private speakingTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
         this.loadSettings();
@@ -32,19 +33,27 @@ export class TTSEngine {
         const text = this.queue.shift()!;
         const cleaned = text.replace(/["`$\\]/g, '');
 
+        // Failsafe: reset speaking flag after 15s in case process events never fire
+        if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
+        this.speakingTimeout = setTimeout(() => {
+            this.speaking = false;
+            this.processQueue();
+        }, 15000);
+
         try {
-            const proc = spawn('say', ['-v', this.voice, '-r', String(this.rate), cleaned], {
-                stdio: 'ignore'
-            });
+            const proc = spawn('/usr/bin/say', ['-v', this.voice, '-r', String(this.rate), cleaned]);
             proc.on('close', () => {
+                if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
                 this.speaking = false;
                 this.processQueue();
             });
             proc.on('error', () => {
+                if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
                 this.speaking = false;
                 this.processQueue();
             });
         } catch {
+            if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
             this.speaking = false;
             this.processQueue();
         }
