@@ -31,9 +31,10 @@ export class TTSEngine {
         if (this.speaking || this.queue.length === 0) return;
         this.speaking = true;
         const text = this.queue.shift()!;
-        // Strip chars that macOS say vocalizes literally, and collapse
-        // repeated punctuation (e.g. "..." or "!!") to a single instance
+        // Strip action/emote text wrapped in asterisks (e.g. *flaps excitedly*)
+        // then strip remaining special chars and collapse repeated punctuation
         const cleaned = text
+            .replace(/\*[^*]+\*/g, '')
             .replace(/["`$\\*_~#<>{}[\]()]/g, '')
             .replace(/([.,!?;:]){2,}/g, '$1')
             .replace(/\s[.,!?;:]\s/g, ' ')
