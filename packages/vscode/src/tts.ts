@@ -6,8 +6,8 @@ export class TTSEngine {
     private speaking: boolean = false;
     private enabled: boolean = true;
     private muted: boolean = false;
-    private voice: string = 'Samantha';
-    private rate: number = 180;
+    private voice: string = 'Daniel';
+    private rate: number = 150;
     private speakingTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
@@ -17,8 +17,8 @@ export class TTSEngine {
     loadSettings(): void {
         const config = vscode.workspace.getConfiguration('frostwig');
         this.enabled = config.get('enabled', true);
-        this.voice = config.get('voice', 'Samantha');
-        this.rate = config.get('rate', 180);
+        this.voice = config.get('voice', 'Daniel');
+        this.rate = config.get('rate', 150);
     }
 
     speak(text: string): void {
