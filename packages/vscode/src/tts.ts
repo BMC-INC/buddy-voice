@@ -31,7 +31,13 @@ export class TTSEngine {
         if (this.speaking || this.queue.length === 0) return;
         this.speaking = true;
         const text = this.queue.shift()!;
-        const cleaned = text.replace(/["`$\\]/g, '');
+        // Strip chars that macOS say vocalizes literally, and collapse
+        // repeated punctuation (e.g. "..." or "!!") to a single instance
+        const cleaned = text
+            .replace(/["`$\\*_~#<>{}[\]()]/g, '')
+            .replace(/([.,!?;:]){2,}/g, '$1')
+            .replace(/\s[.,!?;:]\s/g, ' ')
+            .trim();
 
         // Failsafe: reset speaking flag after 15s in case process events never fire
         if (this.speakingTimeout) clearTimeout(this.speakingTimeout);

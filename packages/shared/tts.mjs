@@ -10,7 +10,13 @@ function processQueue() {
   if (speaking || queue.length === 0) return;
   speaking = true;
   const text = queue.shift();
-  const cleaned = text.replace(/["`$\\]/g, "");
+  // Strip chars that macOS say vocalizes literally, and collapse
+  // repeated punctuation (e.g. "..." or "!!") to a single instance
+  const cleaned = text
+    .replace(/["`$\\*_~#<>{}[\]()]/g, "")
+    .replace(/([.,!?;:]){2,}/g, "$1")
+    .replace(/\s[.,!?;:]\s/g, " ")
+    .trim();
 
   try {
     const proc = spawn("say", ["-v", currentVoice, "-r", "180", cleaned], {
