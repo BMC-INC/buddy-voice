@@ -6,11 +6,16 @@ import { BubbleParser, ParsedBubble } from './bubbleParser';
 
 export type BubbleCallback = (bubble: ParsedBubble) => void;
 
-// Strip ANSI escape codes from raw terminal data
+// Strip ANSI escape codes from raw terminal data.
+// Cursor-positioning sequences (H, f) are replaced with a space
+// so that word boundaries survive; all other codes are removed.
 function stripAnsi(text: string): string {
-    return text.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
-               .replace(/\x1b\][^\x07]*\x07/g, '')
-               .replace(/\x1b\][^\x1b]*\x1b\\/g, '');
+    return text
+        .replace(/\x1b\[[0-9;]*[Hf]/g, ' ')           // cursor position → space
+        .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')        // remaining CSI (colors, etc.)
+        .replace(/\x1b\][^\x07]*\x07/g, '')             // OSC (title, etc.)
+        .replace(/\x1b\][^\x1b]*\x1b\\/g, '')           // OSC with ST terminator
+        .replace(/\s{2,}/g, ' ');                        // collapse runs of whitespace
 }
 
 export class TerminalMonitor {
@@ -119,12 +124,20 @@ export class TerminalMonitor {
             if (text.length < 2) continue;
             // Skip if it contains control chars or looks like file paths
             if (text.startsWith('/') && text.includes('.')) continue;
+            // Skip penguin/buddy ASCII art fragments
+            if (/\\\^{2,}\/|\.---\.|[·•]>|>\(|=\^/.test(text)) continue;
+            // Skip lines that are mostly box-drawing / art characters
+            if (/^[│┃║─━═┌┐└┘╭╮╰╯┏┓┗┛╔╗╚╝\s\-_|/\\().*^`´~]+$/.test(text)) continue;
             lines.push(text);
         }
 
         if (lines.length === 0) return;
 
-        const bubbleText = lines.join(' ');
+        // Strip any stray border chars that leaked into the text
+        const bubbleText = lines.join(' ')
+            .replace(/[│┃║─━═]/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
 
         this.debugFile(`RAW BUBBLE: "${bubbleText}" (${lines.length} lines)`);
 
