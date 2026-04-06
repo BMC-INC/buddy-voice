@@ -7,26 +7,28 @@ import { BubbleParser, ParsedBubble } from './bubbleParser';
 export type BubbleCallback = (bubble: ParsedBubble) => void;
 
 // Strip ANSI escape codes from raw terminal data.
-// Row-changing cursor moves → newline (preserves line structure).
-// Same-row cursor moves → space (preserves word boundaries).
-// Tracks the last cursor row so we can tell the difference.
+// Each cursor-position sequence is replaced based on whether the ROW
+// changes: new row → newline, same row → space.
+// This preserves both line structure and word boundaries.
 function stripAnsi(text: string): string {
     let lastRow = -1;
-    // Phase 1: replace cursor-position sequences intelligently
+    // Phase 1: replace cursor-position sequences
     let out = text.replace(/\x1b\[([0-9;]*)([Hf])/g, (_m, params) => {
         const parts = (params || '').split(';');
         const row = parseInt(parts[0], 10) || 1;
         if (row !== lastRow) {
             lastRow = row;
-            return '\n';   // new row → line break
+            return '\n';
         }
-        return ' ';        // same row, different column → word space
+        return ' ';
     });
     // Phase 2: strip remaining ANSI sequences
     out = out
-        .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')        // remaining CSI (colors, etc.)
-        .replace(/\x1b\][^\x07]*\x07/g, '')             // OSC (title, etc.)
-        .replace(/\x1b\][^\x1b]*\x1b\\/g, '');          // OSC with ST terminator
+        .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+        .replace(/\x1b\][^\x07]*\x07/g, '')
+        .replace(/\x1b\][^\x1b]*\x1b\\/g, '');
+    // Phase 3: collapse runs of spaces (but NOT newlines) to single space
+    out = out.replace(/[ \t]{2,}/g, ' ');
     return out;
 }
 
@@ -112,12 +114,10 @@ export class TerminalMonitor {
      * between │ delimiters when the frame contains a complete box structure.
      */
     private scanRawData(data: string): void {
-        // Only process chunks large enough to contain a bubble (top + content + bottom)
         if (data.length < 30) return;
 
         const stripped = stripAnsi(data);
 
-        // Quick check: does this chunk contain box-drawing border chars?
         const hasTopCorner = /[┌╭┏╔]/.test(stripped);
         const hasBottomCorner = /[└╰┗╚]/.test(stripped);
         const hasVerticalBorder = /[│┃║]/.test(stripped);
@@ -125,42 +125,30 @@ export class TerminalMonitor {
         if (!hasTopCorner || !hasBottomCorner || !hasVerticalBorder) return;
 
         this.debugFile(`RAW HIT: chunk has box chars (len=${data.length})`);
+        this.debugFile(`STRIPPED(300): "${stripped.substring(0, 300).replace(/\n/g, '\\n')}"`);
 
-        // Log first 300 chars of stripped text for debugging
-        this.debugFile(`STRIPPED: "${stripped.substring(0, 300).replace(/\n/g, '\\n')}"`);
+        // Verify the chunk has a complete bubble (top + bottom border)
+        const topRe = /[┌╭┏╔][\s─━═┄┈]+[┐╮┓╗]/;
+        const bottomRe = /[└╰┗╚][\s─━═┄┈]+[┘╯┛╝]/;
+        if (!topRe.test(stripped) || !bottomRe.test(stripped)) return;
 
-        // Split into lines (row-change cursor moves were converted to newlines)
-        const rawLines = stripped.split('\n').map(l => l.trim()).filter(Boolean);
-
-        // Find bubble structure: top border → content lines → bottom border
-        // Allow spaces between border chars (cursor positioning inserts spaces)
-        const topRe = /[┌╭┏╔]\s*[─━═┄┈][\s─━═┄┈]*[┐╮┓╗]/;
-        const bottomRe = /[└╰┗╚]\s*[─━═┄┈][\s─━═┄┈]*[┘╯┛╝]/;
-        const contentRe = /[│┃║]\s*(.*?)\s*[│┃║]/;
-
-        let inBubble = false;
-        const bubbleLines: string[] = [];
-
-        for (const line of rawLines) {
-            if (topRe.test(line)) {
-                inBubble = true;
-                bubbleLines.length = 0;
-                continue;
-            }
-            if (inBubble && bottomRe.test(line)) {
-                inBubble = false;
-                continue;
-            }
-            if (inBubble) {
-                const m = line.match(contentRe);
-                if (m) {
-                    const text = m[1].trim();
-                    if (text.length >= 2) bubbleLines.push(text);
-                }
-            }
+        // Extract ALL text between │...│ pairs across the full stripped text.
+        // This avoids depending on newlines between rows (which cursor
+        // positioning may not produce consistently).
+        const borderOnly = /^[\s─━═┄┈┌┐└┘╭╮╰╯┏┓┗┛╔╗╚╝│┃║.\-`´/()\\~]*$/;
+        const segments: string[] = [];
+        const pairRe = /[│┃║]\s?((?:(?![│┃║]).)+?)\s?[│┃║]/g;
+        let m: RegExpExecArray | null;
+        while ((m = pairRe.exec(stripped)) !== null) {
+            const seg = m[1].trim();
+            if (seg.length < 2) continue;
+            if (borderOnly.test(seg)) continue;
+            segments.push(seg);
         }
 
-        if (bubbleLines.length === 0) return;
+        if (segments.length === 0) return;
+
+        const bubbleLines = segments;
 
         // Join and clean the bubble text
         let bubbleText = bubbleLines.join(' ')
