@@ -25,10 +25,10 @@ export class BubbleParser {
         /\[o_o\]\s*"(.+?)"/,      // robot
     ];
 
-    // Bubble boundaries — ASCII and Unicode box-drawing
-    private static BUBBLE_TOP = /^\s*[_┌╭┏╔][_─━═┄┈][_─━═┄┈]+[_┐╮┓╗]?/;
-    private static BUBBLE_LINE = /^\s*[|│┃║]\s*(.+?)\s*[|│┃║]/;
-    private static BUBBLE_BOTTOM = /^\s*[-└╰┗╚][-─━═┄┈][-─━═┄┈]+[-┘╯┛╝]?/;
+    // Bubble boundaries — no ^ anchor since bubble may be on right side of screen
+    private static BUBBLE_TOP = /[_┌╭┏╔][_─━═┄┈][_─━═┄┈]+[_┐╮┓╗]/;
+    private static BUBBLE_LINE = /[|│┃║]\s*(.+?)\s*[|│┃║]/;
+    private static BUBBLE_BOTTOM = /[-└╰┗╚][-─━═┄┈][-─━═┄┈]+[-┘╯┛╝]/;
 
     constructor(buddyName: string = 'Frostwig') {
         this.buddyName = buddyName;
@@ -68,12 +68,6 @@ export class BubbleParser {
             }
 
             if (this.inBubble) {
-                const lineMatch = trimmed.match(BubbleParser.BUBBLE_LINE);
-                if (lineMatch) {
-                    this.bubbleBuffer.push(lineMatch[1].trim());
-                    continue;
-                }
-
                 if (BubbleParser.BUBBLE_BOTTOM.test(trimmed)) {
                     this.inBubble = false;
                     if (this.bubbleBuffer.length > 0) {
@@ -85,6 +79,13 @@ export class BubbleParser {
                     this.bubbleBuffer = [];
                     continue;
                 }
+
+                const lineMatch = trimmed.match(BubbleParser.BUBBLE_LINE);
+                if (lineMatch) {
+                    this.bubbleBuffer.push(lineMatch[1].trim());
+                }
+                // Skip non-matching lines (UI separators, penguin art, etc.)
+                continue;
             }
 
             // Pattern 3: Name-prefixed speech
