@@ -3,9 +3,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { BubbleParser, ParsedBubble } from './bubbleParser';
-import { VTermScreen } from './vtScreen';
 
 export type BubbleCallback = (bubble: ParsedBubble) => void;
+
+// Strip ANSI escape codes from raw terminal data
+function stripAnsi(text: string): string {
+    return text.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+               .replace(/\x1b\][^\x07]*\x07/g, '')
+               .replace(/\x1b\][^\x1b]*\x1b\\/g, '');
+}
 
 export class TerminalMonitor {
     private parser: BubbleParser;
@@ -15,15 +21,12 @@ export class TerminalMonitor {
     private logWatcher: fs.FSWatcher | null = null;
     private lastLogSize: number = 0;
     private logPath: string = '';
-    private screen: VTermScreen;
-    private parseTimer: ReturnType<typeof setTimeout> | null = null;
     private spokenTexts: Set<string> = new Set();
     private ready: boolean = false;
 
     constructor(buddyName: string, callback: BubbleCallback) {
         this.parser = new BubbleParser(buddyName);
         this.callback = callback;
-        this.screen = new VTermScreen();
     }
 
     start(): string {
@@ -46,18 +49,20 @@ export class TerminalMonitor {
 
             // Grace period: ignore the initial terminal buffer dump
             setTimeout(() => {
-                this.screen.reset();
                 this.parser.reset();
                 this.ready = true;
-            }, 1500);
+                this.debugFile('READY: grace period ended, now listening');
+            }, 2000);
 
             const disposable = onDidWrite((e: { terminal: vscode.Terminal; data: string }) => {
-                this.screen.feed(e.data);
                 if (!this.ready) return;
 
-                // Debounce: wait for the TUI render frame to finish
-                if (this.parseTimer) clearTimeout(this.parseTimer);
-                this.parseTimer = setTimeout(() => this.scanScreen(), 150);
+                // Process raw data directly for bubble detection.
+                // VTermScreen was losing bubble content because subsequent
+                // spinner frames clear rows with ESC[2K before the debounced
+                // scan could read them. Instead, we scan each raw data chunk
+                // immediately for box-drawing bubble patterns.
+                this.scanRawData(e.data);
             });
 
             this.disposables.push(disposable);
@@ -68,32 +73,76 @@ export class TerminalMonitor {
     }
 
     private debugFile(msg: string): void {
-        const p = require('path').join(require('os').homedir(), 'frostwig-debug.log');
-        require('fs').appendFileSync(p, `${new Date().toISOString()} ${msg}\n`);
+        try {
+            const p = path.join(os.homedir(), 'frostwig-debug.log');
+            fs.appendFileSync(p, `${new Date().toISOString()} ${msg}\n`);
+        } catch { /* ignore */ }
     }
 
-    private scanScreen(): void {
-        this.parser.reset();
-        const screenText = this.screen.getScreen();
-        if (!screenText.trim()) return;
+    /**
+     * Scan raw terminal data for box-drawing speech bubbles.
+     *
+     * Claude Code renders the companion's speech bubble using box-drawing
+     * characters (┌─┐│└─┘) via cursor positioning. A single TUI frame
+     * contains the entire bubble. We strip ANSI codes and extract text
+     * between │ delimiters when the frame contains a complete box structure.
+     */
+    private scanRawData(data: string): void {
+        // Only process chunks large enough to contain a bubble (top + content + bottom)
+        if (data.length < 30) return;
 
-        // Dump screen lines that contain box-drawing chars for debugging
-        const interesting = screenText.split('\n').filter(l => /[┌┐└┘│╭╮╰╯║]/.test(l));
-        if (interesting.length > 0) {
-            this.debugFile(`BOX LINES (${interesting.length}): ${interesting.slice(0, 10).map(l => l.substring(0, 120)).join(' | ')}`);
+        const stripped = stripAnsi(data);
+
+        // Quick check: does this chunk contain box-drawing border chars?
+        // Need at least a top corner and bottom corner for a complete bubble
+        const hasTopCorner = /[┌╭┏╔]/.test(stripped);
+        const hasBottomCorner = /[└╰┗╚]/.test(stripped);
+        const hasVerticalBorder = /[│┃║]/.test(stripped);
+
+        if (!hasTopCorner || !hasBottomCorner || !hasVerticalBorder) return;
+
+        this.debugFile(`RAW HIT: chunk has box chars (len=${data.length})`);
+
+        // Extract text between vertical border pairs.
+        // The bubble renders as: ┌───┐ │text│ │text│ └───┘
+        // After stripping ANSI, cursor movements are gone, so border pairs
+        // appear in sequence: │ text │ │ more text │
+        const lines: string[] = [];
+        const borderPattern = /[│┃║]\s*(.+?)\s*[│┃║]/g;
+        let match;
+
+        while ((match = borderPattern.exec(stripped)) !== null) {
+            const text = match[1].trim();
+            // Skip if it looks like a border line (all dashes/box chars)
+            if (/^[─━═┄┈\-_\s]+$/.test(text)) continue;
+            // Skip very short matches (likely false positives)
+            if (text.length < 2) continue;
+            // Skip if it contains control chars or looks like file paths
+            if (text.startsWith('/') && text.includes('.')) continue;
+            lines.push(text);
         }
 
-        const bubbles = this.parser.parse(screenText);
-        for (const bubble of bubbles) {
-            const key = bubble.text.trim();
-            if (!key || this.spokenTexts.has(key)) continue;
-            this.spokenTexts.add(key);
-            if (this.spokenTexts.size > 200) {
-                const first = this.spokenTexts.values().next().value;
-                if (first !== undefined) this.spokenTexts.delete(first);
-            }
-            this.callback(bubble);
+        if (lines.length === 0) return;
+
+        const bubbleText = lines.join(' ');
+
+        this.debugFile(`RAW BUBBLE: "${bubbleText}" (${lines.length} lines)`);
+
+        // Dedup: don't speak the same text twice
+        const key = bubbleText.trim();
+        if (!key || this.spokenTexts.has(key)) {
+            this.debugFile(`DEDUP: already spoken "${key.substring(0, 50)}"`);
+            return;
         }
+
+        this.spokenTexts.add(key);
+        if (this.spokenTexts.size > 200) {
+            const first = this.spokenTexts.values().next().value;
+            if (first !== undefined) this.spokenTexts.delete(first);
+        }
+
+        this.debugFile(`SPOKE: "${key}" (pattern: raw-bubble)`);
+        this.callback({ text: bubbleText, pattern: 'bubble' });
     }
 
     private tryLogWatcher(): boolean {
@@ -182,10 +231,6 @@ export class TerminalMonitor {
     }
 
     dispose(): void {
-        if (this.parseTimer) {
-            clearTimeout(this.parseTimer);
-            this.parseTimer = null;
-        }
         for (const d of this.disposables) d.dispose();
         this.disposables = [];
         if (this.logWatcher) {
@@ -193,7 +238,6 @@ export class TerminalMonitor {
             this.logWatcher = null;
         }
         this.parser.reset();
-        this.screen.reset();
         this.spokenTexts.clear();
     }
 }
