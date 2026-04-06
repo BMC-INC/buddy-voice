@@ -36,8 +36,10 @@ export class TTSEngine {
         const cleaned = text
             .replace(/\*[^*]+\*/g, '')
             .replace(/["`$\\*_~#<>{}[\]()]/g, '')
+            .replace(/,\s*,/g, ',')
             .replace(/([.,!?;:]){2,}/g, '$1')
-            .replace(/\s[.,!?;:]\s/g, ' ')
+            .replace(/(^|[.!?])\s*[.,;:]\s*/g, '$1 ')
+            .replace(/\s{2,}/g, ' ')
             .trim();
 
         // Failsafe: reset speaking flag after 15s in case process events never fire
