@@ -1,133 +1,100 @@
 <div align="center">
 
-<br>
-
 # buddy-voice
 
-### Your Claude Code buddy already talks. Now it speaks.
+### Your Claude Code buddy already has attitude. Now it has a voice.
 
-<br>
+<p>
+  <a href="https://github.com/BMC-INC/buddy-voice/stargazers"><img src="https://img.shields.io/github/stars/BMC-INC/buddy-voice?style=for-the-badge" alt="GitHub stars" /></a>
+  <a href="https://github.com/BMC-INC/buddy-voice/issues"><img src="https://img.shields.io/github/issues/BMC-INC/buddy-voice?style=for-the-badge" alt="GitHub issues" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ecc71?style=for-the-badge" alt="MIT License" /></a>
+  <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-fd79a8?style=for-the-badge" alt="PRs welcome" /></a>
+</p>
 
-<img src="https://img.shields.io/badge/Claude_Code-Buddy_Voice-6c5ce7?style=for-the-badge" alt="Claude Code Buddy Voice" />
-<img src="https://img.shields.io/badge/macOS-TTS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS TTS" />
-<img src="https://img.shields.io/badge/Zero_Dependencies-00cec9?style=for-the-badge" alt="Zero Dependencies" />
-<img src="https://img.shields.io/badge/License-MIT-2ecc71?style=for-the-badge" alt="MIT License" />
+<a href="./demo/frostwig-demo.mp4">
+  <img src="./demo/frostwig-demo-poster.png" alt="buddy-voice demo running inside VS Code with Frostwig speaking in the terminal" />
+</a>
 
-<br><br>
+**You already talk to your buddy in Claude Code. This lets it talk back out loud.**
 
-```
-  you > Hey Frostwig, what do you think of my code?
+The first time your penguin roasts your variable names through your speakers, the entire project makes sense.
 
-  Frostwig: Your variable names look like you were
-  fighting the keyboard and losing.
-                                          🔊 *spoken aloud*
-```
-
-*Examples show Frostwig (penguin) — your buddy's name and personality will be different.*
-
-<br>
-
-### 🎬 See It In Action
-
-> **🔊 Unmute for the full experience** — the voice is the whole point.
-
-https://github.com/BMC-INC/buddy-voice/raw/main/demo/frostwig-demo.mp4
-
-<br>
-
-**You already talk to your buddy in Claude Code. This makes it talk back — out loud.**
-
-**Works with all 18 species.** Penguin, dragon, cat, ghost, robot, owl — whatever `/buddy` gave you.
-
-
-
-[CLI Mode](#cli-mode) · [VS Code Extension](#vs-code-extension) · [How It Works](#how-it-works) · [Install](#install)
-
-<br>
+[Watch the demo](./demo/frostwig-demo.mp4) · [Quick Start](#quick-start) · [Install Options](#install-options) · [How It Works](#how-it-works) · [Contributing](./CONTRIBUTING.md)
 
 </div>
 
 ---
 
-## The Problem
+## Why This Exists
 
-Claude Code shipped `/buddy` — a companion pet that lives in your terminal. Penguin, dragon, cat, robot, whatever you got. You talk to it by name, it responds in character. It has personality. It has opinions. It has stats.
+Claude Code's `/buddy` feature is weirdly charming for something living in a terminal. Your pet has a name, a species, a personality, stats, and strong opinions about your code.
 
-But it's silent. The responses scroll by as text while you're staring at code. You miss half of them.
+Then it says something funny and you miss it because you're deep in a refactor.
 
-**buddy-voice makes your buddy audible.** Every response, every quip, every unsolicited opinion about your variable names — spoken aloud through your speakers.
+`buddy-voice` fixes that. It turns buddy responses into speech using macOS's built-in `say` command, so the pet you already have becomes something you can actually hear.
 
----
+No cloud TTS. No weird audio pipeline. No rewriting Claude Code. Just your buddy, but louder.
 
-## Two Modes, One Job
+## Quick Start
 
-### CLI Mode
+If you want the fastest possible version, skip the extension and the CLI.
 
-A dedicated conversation with your buddy. You type, it responds in character, you hear it.
-
-```
-  you > What's your debugging strategy?
-
-  Frostwig: Step 1: Stare at the code. Step 2: Stare harder.
-  Step 3: Add a console.log. Step 4: Regret everything.
-                                                    🔊
-```
-
-```
-  you > /stats
-
-  Frostwig the penguin (legendary)
-  DEBUGGING: 7/10
-  PATIENCE: 4/10
-  CHAOS: 8/10
-  WISDOM: 6/10
-  SNARK: 9/10
-```
-
-```
-  you > /pet
-
-  Frostwig: *happy penguin noises*
-                              🔊
-```
-
-### VS Code Extension
-
-Hands-free. Monitors your terminal while you code with Claude Code. When your buddy drops a comment, you hear it automatically. Never miss a quip again.
-
-- Status bar toggle — click to mute/unmute
-- Works with all 18 buddy species
-- Command palette: change voice, test voice, view stats
-- Detects speech bubbles, name-prefixed lines, and face icons
-
----
-
-## Install
-
-### Easiest: CLAUDE.md Instruction (Recommended)
-
-No install needed. Add this to your `~/CLAUDE.md` (global) or any project's `CLAUDE.md`:
+Add this to `~/CLAUDE.md`:
 
 ```markdown
 ## Buddy Voice
 
-When the companion (any /buddy pet) speaks — whether the user addresses
-it by name or it drops a comment — run the response through macOS TTS:
+When the companion (any /buddy pet) speaks, run the response through macOS TTS:
 
   say -v Samantha -r 180 "<response text>"
 
-Fire and forget. Don't await. Just speak it every time the buddy responds.
+Fire and forget. Speak every time the buddy responds.
 ```
 
-That's it. Next Claude Code session, your buddy talks out loud. No tools, no extensions, no dependencies. Claude sees the instruction and speaks every buddy response automatically.
+Then:
 
-**Change the voice:** Replace `Samantha` with any macOS voice (`Daniel` for deep, `Karen` for smooth, `Fred` for quirky). Run `say -v '?'` to see all options.
+1. Open Claude Code.
+2. Run `/buddy` if you have not already created your companion.
+3. Talk to your buddy and hear it reply.
 
-### CLI (Standalone Conversations)
+That is the zero-install magic path.
+
+## Install Options
+
+| Option | Best for | Setup | How it works |
+|:--|:--|:--|:--|
+| `CLAUDE.md` instruction | The fastest possible setup | 30 seconds | Claude Code calls macOS `say` whenever your buddy responds |
+| VS Code extension | Passive, hands-free buddy narration while you code | 2-3 minutes | Watches terminal output locally and speaks detected buddy lines |
+| CLI mode | Dedicated buddy conversations in a standalone REPL | 2 minutes | Calls the Anthropic Messages API directly and speaks the reply |
+
+## Install
+
+### 1. Zero-Install via `CLAUDE.md` (Recommended)
+
+Use the snippet above and you are done.
+
+This is the cleanest onboarding path because it keeps the whole experience inside the workflow you already use.
+
+### 2. VS Code Extension
+
+From the repo root:
 
 ```bash
-git clone https://github.com/BMC-INC/buddy-voice.git
-cd buddy-voice/packages/cli
+cd packages/vscode
+npm install
+npm run compile
+npx vsce package
+code --install-extension frostwig-voice-1.0.0.vsix
+```
+
+Open a terminal in VS Code, start Claude Code, activate `/buddy`, and your companion's lines will be spoken automatically.
+
+### 3. CLI Mode
+
+From the repo root:
+
+```bash
+cd packages/cli
 npm link
 ```
 
@@ -136,119 +103,158 @@ export ANTHROPIC_API_KEY=sk-ant-...
 buddy-voice
 ```
 
-That's it. You're talking to your buddy.
+You will get a lightweight REPL where your buddy replies in character and speaks each response aloud.
+
+## Why It Feels Good
+
+- The joke lands immediately. Your buddy stops being text decoration and starts feeling alive.
+- Setup is tiny. The recommended path is literally a few lines in `CLAUDE.md`.
+- The audio is local. That matters for trust.
+- The project has personality without becoming a gimmick.
+
+## What You Actually Get
+
+### CLI Mode
+
+Direct conversation with your buddy in a simple REPL.
+
+```text
+you > What's your debugging strategy?
+
+Frostwig: Step 1: stare at the code. Step 2: stare harder.
+Step 3: add a console.log. Step 4: regret everything.
+```
+
+```text
+you > /stats
+
+Frostwig the penguin (legendary)
+DEBUGGING: 7/10
+PATIENCE: 4/10
+CHAOS: 8/10
+WISDOM: 6/10
+SNARK: 9/10
+```
 
 ### VS Code Extension
 
-```bash
-cd buddy-voice/packages/vscode
-npm install
-npm run compile
-npx vsce package
-code --install-extension frostwig-voice-1.0.0.vsix
-```
+Hands-free buddy narration while Claude Code is running inside the terminal you already use.
 
-Open a terminal in VS Code, run Claude Code, activate `/buddy`. You'll hear it.
-
----
+- Status bar toggle for mute/unmute
+- Voice picker and test command
+- Buddy stats command
+- Local parsing of speech bubbles, box-drawn dialogue, and name-prefixed lines
+- Read-only monitoring with no extra API calls from the extension
 
 ## How It Works
 
-```
-┌──────────────────────────────────────────────────────┐
-│                                                      │
-│  CLI Mode                                            │
-│                                                      │
-│  You type ──> Anthropic API ──> Buddy responds       │
-│                                  in character         │
-│                                    │                  │
-│                                    ▼                  │
-│                              macOS say 🔊             │
-│                                                      │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  VS Code Extension Mode                              │
-│                                                      │
-│  Claude Code terminal ──> Monitor detects             │
-│  buddy speech bubble      buddy speech                │
-│                              │                        │
-│                              ▼                        │
-│                        macOS say 🔊                   │
-│                                                      │
-└──────────────────────────────────────────────────────┘
+```text
+┌──────────────────────────────────────────────────────────┐
+│ Zero-Install via CLAUDE.md                              │
+│ Claude Code buddy response -> macOS say -> speakers     │
+├──────────────────────────────────────────────────────────┤
+│ VS Code Extension                                       │
+│ Claude Code terminal -> local parser -> macOS say       │
+├──────────────────────────────────────────────────────────┤
+│ CLI Mode                                                │
+│ your prompt -> Anthropic Messages API -> macOS say      │
+└──────────────────────────────────────────────────────────┘
 ```
 
-**CLI Mode** calls the Anthropic API directly. Your buddy's name, personality, and stats are loaded from `~/.claude.json` (written by Claude Code's `/buddy` command). The system prompt makes Claude respond as your buddy — not as Claude. Responses are spoken through macOS `say`.
+### Under the Hood
 
-**VS Code Extension** doesn't call any API. It watches terminal output for buddy speech patterns — face icons like `(o>`, pipe-delimited speech bubbles, and name-prefixed lines like `Frostwig: text`. When it detects one, it extracts the plain text and speaks it. Fire and forget.
+| Mode | Input source | Detection strategy | Audio path |
+|:--|:--|:--|:--|
+| `CLAUDE.md` | Claude Code buddy replies | Instruction-driven | macOS `say` |
+| VS Code extension | Terminal output and Claude log fallback | Bubble parsing, face detection, and name matching | macOS `say` |
+| CLI | Anthropic Messages API | Buddy identity loaded from `~/.claude.json` | macOS `say` |
 
-Both use a **speech queue** — if your buddy drops two quips in a row, they play sequentially, never overlap.
+### Privacy and Performance
 
----
+- Audio is generated locally with macOS `say`.
+- The VS Code extension does not send your terminal output to a remote service.
+- Buddy lines are queued so multiple quips do not overlap.
+- The extension is read-only. It watches, parses, and speaks. That is it.
+
+## Voice Ideas
+
+The voice choice changes the whole bit. A few pairings that work especially well on macOS:
+
+| Buddy vibe | Voice | Why it works |
+|:--|:--|:--|
+| Sharp, clever, slightly smug | `Daniel` | Crisp and a little theatrical |
+| Friendly but still sarcastic | `Samantha` | Smooth and easy to listen to |
+| Tiny chaos goblin | `Fred` | Weird in exactly the right way |
+| Cute but unhinged | `Bubbles` | Great for rare little weirdos |
+| Big ancient creature energy | `Ralph` | Deep, heavy, and dramatic |
+
+Preview voices:
+
+```bash
+say -v Daniel "I reviewed your code. It has... texture."
+say -v '?' 
+```
 
 ## CLI Commands
 
 | Command | What it does |
-|:--------|:-------------|
+|:--|:--|
 | `/voice on\|off` | Toggle TTS |
-| `/voice set <name>` | Change macOS voice (try Daniel, Karen, Fred) |
-| `/voice list` | List all available voices |
-| `/stats` | Show buddy's name, species, rarity, and stat scores |
+| `/voice set <name>` | Change macOS voice |
+| `/voice list` | List installed voices |
+| `/stats` | Show buddy species, rarity, and stats |
 | `/pet` | Pet your buddy |
 | `/mute` | Mute voice |
 | `/quit` | Exit |
 
----
-
 ## Requirements
 
-| What | Why |
-|:-----|:----|
-| Node.js 18+ | Runtime |
-| macOS | TTS via `say` command (text-only fallback on other OS) |
-| `ANTHROPIC_API_KEY` | CLI mode only — powers the conversation |
-| Claude Code with `/buddy` | So your buddy config exists in `~/.claude.json` |
+| Requirement | Notes |
+|:--|:--|
+| Node.js 18+ | Needed for the CLI and extension build |
+| macOS | Voice output currently uses the native `say` command |
+| `ANTHROPIC_API_KEY` | Required for CLI mode only |
+| Claude Code with `/buddy` | Needed if you want to load your actual companion identity |
 
----
+Windows and Linux support are very possible. The obvious direction is swapping `say` for something like PowerShell TTS, `espeak-ng`, or `spd-say`. If you want to help port it, PRs are welcome.
 
-## Works With Every Buddy Species
+## What This Project Does Not Do
 
-Your buddy is whatever Claude Code gave you. Penguin, dragon, cat, ghost, robot, owl, fox, bear, bunny, frog, unicorn, bat, wolf, turtle, snake, hamster, phoenix — doesn't matter. buddy-voice reads the config and adapts.
-
----
-
-## What This Does NOT Do
-
-- **Does not draw anything.** Your buddy's appearance is Claude Code's job.
-- **Does not modify Claude Code.** Read-only. We just listen.
-- **Does not collect data.** Zero telemetry. Zero phone home.
-- **Does not have npm dependencies.** Node stdlib and fetch. That's it.
-
----
+- It does not modify Claude Code.
+- It does not generate buddy art.
+- It does not send audio off your machine.
+- It does not pretend to be more complex than it is.
 
 ## Project Structure
 
-```
+```text
 buddy-voice/
   packages/
-    cli/          # Interactive REPL with voice
-    vscode/       # VS Code extension
-    shared/       # TTS engine, config reader, speech parser
-  package.json    # npm workspace root
+    cli/        # standalone buddy REPL
+    vscode/     # VS Code extension
+    shared/     # config loading, parser logic, speech helpers
+  demo/         # demo video and README media
 ```
+
+## Contributing
+
+If you want to make this better, the highest-leverage ideas are:
+
+- Windows and Linux voice backends
+- VS Code Marketplace publishing
+- Better demo assets and buddy voice samples
+- More parser coverage for future Claude Code buddy UI variations
+
+Open an issue, send a PR, or fork it and make your terminal pet unreasonably dramatic.
 
 ---
 
 <div align="center">
 
-<br>
+Built by [**James Benton Jr.**](https://linkedin.com/in/james-benton-execlayer/) and [**ExecLayer Inc.**](https://github.com/BMC-INC)
 
-Built by [**James Benton Jr.**](https://linkedin.com/in/james-benton-execlayer/) / [**ExecLayer Inc.**](https://github.com/BMC-INC)
-
-Not affiliated with or endorsed by Anthropic. We just really like talking to penguins.
+Not affiliated with or endorsed by Anthropic.
 
 MIT License
-
-<br>
 
 </div>

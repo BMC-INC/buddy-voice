@@ -2,12 +2,26 @@
   "name": "buddy-voice",
   "version": "1.0.0",
   "private": true,
-  "description": "Give your Claude Code buddy a voice",
+  "description": "Give your Claude Code buddy a real voice with local macOS text-to-speech.",
   "workspaces": ["packages/*"],
   "author": "James Benton Jr.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/BMC-INC/buddy-voice.git"
-  }
+  },
+  "homepage": "https://github.com/BMC-INC/buddy-voice#readme",
+  "bugs": {
+    "url": "https://github.com/BMC-INC/buddy-voice/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "buddy",
+    "tts",
+    "text-to-speech",
+    "terminal",
+    "vscode-extension",
+    "cli",
+    "macos"
+  ]
 }

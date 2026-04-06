@@ -1,19 +1,36 @@
 {
   "name": "frostwig-voice",
   "displayName": "Frostwig Voice - Talk to Your Claude Code Buddy",
-  "description": "Gives your Claude Code Buddy pet a voice. Monitors terminal for buddy speech bubbles and speaks them aloud.",
+  "description": "Give your Claude Code buddy a voice in VS Code. Detects buddy speech locally and speaks it with macOS TTS.",
   "version": "1.0.0",
   "publisher": "execlayer",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/BMC-INC/frostwig-vscode"
+    "url": "https://github.com/BMC-INC/buddy-voice.git",
+    "directory": "packages/vscode"
+  },
+  "homepage": "https://github.com/BMC-INC/buddy-voice/tree/main/packages/vscode",
+  "bugs": {
+    "url": "https://github.com/BMC-INC/buddy-voice/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
-  "keywords": ["claude", "claude-code", "buddy", "tts", "voice", "terminal", "pet", "companion"],
+  "categories": ["Other", "Productivity"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "buddy",
+    "tts",
+    "text-to-speech",
+    "voice",
+    "terminal",
+    "pet",
+    "companion",
+    "macos",
+    "developer-tools"
+  ],
   "activationEvents": [
     "onDidOpenTerminal"
   ],
@@ -68,7 +85,7 @@
           "default": 1.0,
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Volume level"
+          "description": "Reserved for future voice backends. The native macOS say command does not expose per-call volume."
         },
         "frostwig.muteOnFocus": {
           "type": "boolean",
@@ -88,7 +105,7 @@
         "frostwig.soundEffect": {
           "type": "boolean",
           "default": true,
-          "description": "Play a subtle chirp before speaking"
+          "description": "Reserved for future voice polish. No chirp is currently played by the extension."
         }
       }
     }

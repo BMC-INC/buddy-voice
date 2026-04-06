@@ -9,12 +9,12 @@ const noVoice = args.includes("--no-voice") || args.includes("--silent");
 
 if (args.includes("--help") || args.includes("-h")) {
   console.log(`
-frostwig - talk to your Claude Code buddy with voice
+buddy-voice - talk to your Claude Code buddy with voice
 
 USAGE:
-  frostwig              Start interactive chat
-  frostwig --no-voice   Text only
-  frostwig --help       Show this help
+  buddy-voice              Start interactive chat
+  buddy-voice --no-voice   Text only
+  buddy-voice --help       Show this help
 
 IN-SESSION:
   /voice on|off    Toggle TTS

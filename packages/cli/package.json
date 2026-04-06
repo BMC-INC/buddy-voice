@@ -1,7 +1,7 @@
 {
   "name": "buddy-voice-cli",
   "version": "1.0.0",
-  "description": "Talk to your Claude Code buddy with voice",
+  "description": "Talk to your Claude Code buddy in a lightweight CLI with local macOS text-to-speech.",
   "bin": {
     "buddy-voice": "./bin/frostwig.mjs"
   },
@@ -10,5 +10,24 @@
     "node": ">=18"
   },
   "author": "James Benton Jr.",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BMC-INC/buddy-voice.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/BMC-INC/buddy-voice/tree/main/packages/cli",
+  "bugs": {
+    "url": "https://github.com/BMC-INC/buddy-voice/issues"
+  },
+  "keywords": [
+    "claude-code",
+    "buddy",
+    "tts",
+    "text-to-speech",
+    "cli",
+    "terminal",
+    "anthropic",
+    "macos"
+  ]
 }
