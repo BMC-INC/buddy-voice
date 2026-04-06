@@ -7,15 +7,15 @@ import { BubbleParser, ParsedBubble } from './bubbleParser';
 export type BubbleCallback = (bubble: ParsedBubble) => void;
 
 // Strip ANSI escape codes from raw terminal data.
-// Cursor-positioning sequences (H, f) are replaced with a space
-// so that word boundaries survive; all other codes are removed.
+// Cursor-positioning sequences (H, f) are replaced with a newline
+// so that line boundaries survive; all other codes are removed.
 function stripAnsi(text: string): string {
     return text
-        .replace(/\x1b\[[0-9;]*[Hf]/g, ' ')           // cursor position → space
+        .replace(/\x1b\[[0-9;]*[Hf]/g, '\n')          // cursor position → newline (preserves line structure)
         .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')        // remaining CSI (colors, etc.)
         .replace(/\x1b\][^\x07]*\x07/g, '')             // OSC (title, etc.)
-        .replace(/\x1b\][^\x1b]*\x1b\\/g, '')           // OSC with ST terminator
-        .replace(/\s{2,}/g, ' ');                        // collapse runs of whitespace
+        .replace(/\x1b\][^\x1b]*\x1b\\/g, '');          // OSC with ST terminator
+    // NOTE: do NOT collapse whitespace here — the border regex needs intact lines
 }
 
 export class TerminalMonitor {
@@ -99,7 +99,6 @@ export class TerminalMonitor {
         const stripped = stripAnsi(data);
 
         // Quick check: does this chunk contain box-drawing border chars?
-        // Need at least a top corner and bottom corner for a complete bubble
         const hasTopCorner = /[┌╭┏╔]/.test(stripped);
         const hasBottomCorner = /[└╰┗╚]/.test(stripped);
         const hasVerticalBorder = /[│┃║]/.test(stripped);
@@ -108,38 +107,69 @@ export class TerminalMonitor {
 
         this.debugFile(`RAW HIT: chunk has box chars (len=${data.length})`);
 
-        // Extract text between vertical border pairs.
-        // The bubble renders as: ┌───┐ │text│ │text│ └───┘
-        // After stripping ANSI, cursor movements are gone, so border pairs
-        // appear in sequence: │ text │ │ more text │
-        const lines: string[] = [];
-        const borderPattern = /[│┃║]\s*(.+?)\s*[│┃║]/g;
-        let match;
+        // Split into lines (cursor positioning was converted to newlines)
+        const rawLines = stripped.split('\n').map(l => l.trim()).filter(Boolean);
 
-        while ((match = borderPattern.exec(stripped)) !== null) {
-            const text = match[1].trim();
-            // Skip if it looks like a border line (all dashes/box chars)
-            if (/^[─━═┄┈\-_\s]+$/.test(text)) continue;
-            // Skip very short matches (likely false positives)
-            if (text.length < 2) continue;
-            // Skip if it contains control chars or looks like file paths
-            if (text.startsWith('/') && text.includes('.')) continue;
-            // Skip penguin/buddy ASCII art fragments
-            if (/\\\^{2,}\/|\.---\.|[·•]>|>\(|=\^/.test(text)) continue;
-            // Skip lines that are mostly box-drawing / art characters
-            if (/^[│┃║─━═┌┐└┘╭╮╰╯┏┓┗┛╔╗╚╝\s\-_|/\\().*^`´~]+$/.test(text)) continue;
-            lines.push(text);
+        // Find bubble structure: top border → content lines → bottom border
+        const topRe = /[┌╭┏╔][─━═┄┈]+[┐╮┓╗]/;
+        const bottomRe = /[└╰┗╚][─━═┄┈]+[┘╯┛╝]/;
+        const contentRe = /^[│┃║]\s*(.*?)\s*[│┃║]/;
+
+        let inBubble = false;
+        const bubbleLines: string[] = [];
+
+        for (const line of rawLines) {
+            if (topRe.test(line)) {
+                inBubble = true;
+                bubbleLines.length = 0;
+                continue;
+            }
+            if (inBubble && bottomRe.test(line)) {
+                inBubble = false;
+                continue;
+            }
+            if (inBubble) {
+                const m = line.match(contentRe);
+                if (m) {
+                    const text = m[1].trim();
+                    if (text.length >= 2) bubbleLines.push(text);
+                }
+            }
         }
 
-        if (lines.length === 0) return;
+        if (bubbleLines.length === 0) return;
 
-        // Strip any stray border chars that leaked into the text
-        const bubbleText = lines.join(' ')
-            .replace(/[│┃║─━═]/g, '')
+        // Join and clean the bubble text
+        let bubbleText = bubbleLines.join(' ')
+            .replace(/[│┃║─━═┌┐└┘╭╮╰╯┏┓┗┛╔╗╚╝]/g, '')  // stray border chars
             .replace(/\s{2,}/g, ' ')
             .trim();
 
-        this.debugFile(`RAW BUBBLE: "${bubbleText}" (${lines.length} lines)`);
+        // Filter out Claude Code UI chrome that leaks into bubble area
+        bubbleText = bubbleText
+            .replace(/[◐◑◒◓]\s*\w+\s*·\s*\/\w+/g, '')     // spinner + mode like ◐medium·/effort
+            .replace(/esc\s*to\s*interrupt/gi, '')            // "esc to interrupt"
+            .replace(/\?\s*for\s*shortcuts/gi, '')            // "? for shortcuts"
+            .replace(/\/\(\s*\)\s*\\/g, '')                   // /( )\ penguin body
+            .replace(/`---´/g, '')                            // penguin beak
+            .replace(/[❯❮►▸▹▷]\s*$/g, '')                    // prompt arrows
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        // Skip if only emotes remain (e.g. "*waddles closer*")
+        const withoutEmotes = bubbleText.replace(/\*[^*]+\*/g, '').trim();
+        if (!withoutEmotes || withoutEmotes.length < 3) {
+            this.debugFile(`SKIP EMOTE-ONLY: "${bubbleText.substring(0, 60)}"`);
+            return;
+        }
+
+        // Skip if too short after cleanup (likely UI fragments)
+        if (bubbleText.length < 4) {
+            this.debugFile(`SKIP SHORT: "${bubbleText}"`);
+            return;
+        }
+
+        this.debugFile(`RAW BUBBLE: "${bubbleText}" (${bubbleLines.length} lines)`);
 
         // Dedup: don't speak the same text twice
         const key = bubbleText.trim();
