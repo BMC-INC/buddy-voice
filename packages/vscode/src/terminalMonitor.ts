@@ -67,10 +67,21 @@ export class TerminalMonitor {
         }
     }
 
+    private debugFile(msg: string): void {
+        const p = require('path').join(require('os').homedir(), 'frostwig-debug.log');
+        require('fs').appendFileSync(p, `${new Date().toISOString()} ${msg}\n`);
+    }
+
     private scanScreen(): void {
         this.parser.reset();
         const screenText = this.screen.getScreen();
         if (!screenText.trim()) return;
+
+        // Dump screen lines that contain box-drawing chars for debugging
+        const interesting = screenText.split('\n').filter(l => /[┌┐└┘│╭╮╰╯║]/.test(l));
+        if (interesting.length > 0) {
+            this.debugFile(`BOX LINES (${interesting.length}): ${interesting.slice(0, 10).map(l => l.substring(0, 120)).join(' | ')}`);
+        }
 
         const bubbles = this.parser.parse(screenText);
         for (const bubble of bubbles) {
