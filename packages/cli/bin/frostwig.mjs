@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createInterface } from "readline";
+import { createConversation } from "../../shared/conversation.mjs";
 import { loadBuddyConfig, getBuddyIdentity } from "../../shared/config.mjs";
 import { speak, setVoice, getVoice, setEnabled, isEnabled, hasTTS, listVoices } from "../../shared/tts.mjs";
 
@@ -27,6 +28,7 @@ IN-SESSION:
 
 REQUIRES:
   ANTHROPIC_API_KEY env var
+  ANTHROPIC_MODEL optional (default: claude-sonnet-4-6)
   macOS say command (optional, for voice)
 `);
   process.exit(0);
@@ -53,7 +55,8 @@ if (!companion) {
 let voiceOn = ttsAvailable && !noVoice;
 setEnabled(voiceOn);
 
-const messages = [];
+const conversation = createConversation(chat);
+let requestInFlight = false;
 
 function buildSystemPrompt() {
   return `You are ${identity.name}, a ${identity.rarity} ${identity.species} who lives in a developer's terminal.
@@ -81,13 +84,14 @@ const systemPrompt = buildSystemPrompt();
 async function chat(msgs) {
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
+    signal: AbortSignal.timeout(30000),
     headers: {
       "Content-Type": "application/json",
       "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
       max_tokens: 200,
       system: systemPrompt,
       messages: msgs,
@@ -107,9 +111,7 @@ console.log(`\n  ${identity.name} the ${identity.species} | voice: ${voiceOn ? g
 
 // Greeting
 try {
-  messages.push({ role: "user", content: "Hey! Greet me." });
-  const greeting = await chat(messages);
-  messages.push({ role: "assistant", content: greeting });
+  const greeting = await conversation.send("Hey! Greet me.");
   console.log(`  ${identity.name}: ${greeting}\n`);
   if (voiceOn) speak(greeting);
 } catch (err) {
@@ -162,8 +164,8 @@ rl.on("line", async (line) => {
     }
 
     if (cmd.startsWith("/voice")) {
-      const parts = cmd.split(" ");
-      const sub = parts[1];
+      const parts = input.split(/\s+/);
+      const sub = parts[1]?.toLowerCase();
       if (sub === "off") { voiceOn = false; setEnabled(false); console.log("\n  Voice off.\n"); }
       else if (sub === "on") {
         if (ttsAvailable) { voiceOn = true; setEnabled(true); console.log(`\n  Voice on (${getVoice()}).\n`); }
@@ -187,12 +189,15 @@ rl.on("line", async (line) => {
     rl.prompt(); return;
   }
 
+  if (requestInFlight) {
+    console.log("  Please wait for the current reply before sending another message.");
+    return;
+  }
+  requestInFlight = true;
   process.stdout.write(`  ${identity.name} is thinking...`);
-  messages.push({ role: "user", content: input });
 
   try {
-    const response = await chat(messages);
-    messages.push({ role: "assistant", content: response });
+    const response = await conversation.send(input);
     process.stdout.write("\r\x1b[K");
     console.log(`  ${identity.name}: ${response}\n`);
     if (voiceOn) speak(response);
@@ -201,6 +206,7 @@ rl.on("line", async (line) => {
     console.log(`  Error: ${err.message}\n`);
   }
 
+  requestInFlight = false;
   rl.prompt();
 });
 

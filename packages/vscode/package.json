@@ -17,7 +17,10 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other", "Productivity"],
+  "categories": [
+    "Other",
+    "Productivity"
+  ],
   "keywords": [
     "claude",
     "claude-code",
@@ -82,9 +85,9 @@
         },
         "frostwig.volume": {
           "type": "number",
-          "default": 1.0,
-          "minimum": 0.0,
-          "maximum": 1.0,
+          "default": 1,
+          "minimum": 0,
+          "maximum": 1,
           "description": "Reserved for future voice backends. The native macOS say command does not expose per-call volume."
         },
         "frostwig.muteOnFocus": {
@@ -111,16 +114,16 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "node ../../scripts/prepare-extension.mjs && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
     "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.0",
-    "@vscode/vsce": "^2.22.0"
+    "@types/vscode": "1.85.0",
+    "@vscode/vsce": "4.1.0",
+    "typescript": "^5.3.0"
   }
 }

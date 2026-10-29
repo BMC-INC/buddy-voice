@@ -1,7 +1,8 @@
 node_modules/
 out/
 *.vsix
-package-lock.json
 .DS_Store
 *.env
 .env
+packages/vscode/LICENSE
+packages/vscode/README.md
