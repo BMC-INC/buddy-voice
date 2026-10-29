@@ -19,9 +19,9 @@ test("the published CLI tarball installs and runs independently of the workspace
     const cli = join(root, "installed/node_modules/.bin/buddy-voice");
     assert.match(run(process.execPath, [cli, "--help"], { cwd: root }), /ANTHROPIC_API_KEY/);
     const fixture = join(root, "mock-api.mjs");
-    writeFileSync(fixture, `globalThis.fetch = async () => ({ok:true,json:async()=>({content:[{type:"text",text:"Packaged greeting."}]})});`);
+    writeFileSync(fixture, `import os from "node:os"; import {syncBuiltinESMExports} from "node:module"; os.homedir=()=>process.env.BUDDY_TEST_ROOT; syncBuiltinESMExports(); globalThis.fetch = async () => ({ok:true,json:async()=>({content:[{type:"text",text:"Packaged greeting."}]})});`);
     const output = run(process.execPath, ["--import", fixture, cli, "--no-voice"], {
-      cwd: root, env: { ...process.env, HOME: root, ANTHROPIC_API_KEY: "synthetic-fixture" }, input: "/stats\n/quit\n",
+      cwd: root, env: { ...process.env, BUDDY_TEST_ROOT: root, ANTHROPIC_API_KEY: "synthetic-fixture" }, input: "/stats\n/quit\n",
     });
     assert.match(output, /Packaged greeting/);
     assert.match(output, /DEBUGGING/);

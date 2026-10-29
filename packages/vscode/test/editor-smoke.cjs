@@ -1,4 +1,4 @@
-// Run only in an isolated VS Code extension host with a synthetic HOME.
+// Run only in an isolated VS Code extension host with a synthetic companion directory.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -6,7 +6,7 @@ const path = require('node:path');
 const vscode = require('vscode');
 
 async function runIntegration() {
-  assert.equal(os.homedir(), process.env.BUDDY_TEST_HOME, 'Refusing to inspect a real user home');
+  assert.equal(os.homedir(), process.env.BUDDY_TEST_ROOT, 'Synthetic path injection must precede extension activation');
   const config = vscode.workspace.getConfiguration('frostwig');
   assert.equal(config.get('enabled'), false);
   assert.equal(config.get('showNotification'), false);
@@ -46,11 +46,17 @@ async function runIntegration() {
 };
 
 exports.run = async function () {
+  const originalHomedir = os.homedir;
+  assert.ok(process.env.BUDDY_TEST_ROOT, 'A dedicated synthetic directory is required');
+  assert.notEqual(process.env.BUDDY_TEST_ROOT, originalHomedir());
+  os.homedir = () => process.env.BUDDY_TEST_ROOT;
   try {
     await runIntegration();
-    fs.writeFileSync(path.join(process.env.BUDDY_TEST_HOME, 'result.json'), JSON.stringify({ok:true}));
+    fs.writeFileSync(path.join(process.env.BUDDY_TEST_ROOT, 'result.json'), JSON.stringify({ok:true}));
   } catch (error) {
-    fs.writeFileSync(path.join(process.env.BUDDY_TEST_HOME, 'result.json'), JSON.stringify({ok:false,error:String(error.stack || error)}));
+    fs.writeFileSync(path.join(process.env.BUDDY_TEST_ROOT, 'result.json'), JSON.stringify({ok:false,error:String(error.stack || error)}));
     throw error;
+  } finally {
+    os.homedir = originalHomedir;
   }
 };

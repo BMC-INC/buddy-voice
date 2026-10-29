@@ -164,6 +164,7 @@ For an isolated real-editor smoke check after compiling, run:
 node scripts/test-editor.mjs "/Applications/Visual Studio Code.app/Contents/MacOS/Code"
 ```
 
-It uses a temporary home/profile with synthetic companion logs, disables speech,
+It uses a temporary profile and a test-only home-directory lookup for synthetic companion logs,
+disables speech,
 and checks activation, commands, log append/truncation/rotation, and absence of
 legacy debug captures. It never reads the user's terminal contents or companion logs.

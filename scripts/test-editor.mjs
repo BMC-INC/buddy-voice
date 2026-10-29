@@ -14,7 +14,7 @@ try {
     'security.workspace.trust.enabled': false, 'workbench.startupEditor': 'none',
     'frostwig.enabled': false, 'frostwig.showNotification': false,
   }));
-  const env = { ...process.env, HOME: root, BUDDY_TEST_HOME: root };
+  const env = { ...process.env, BUDDY_TEST_ROOT: root };
   delete env.ELECTRON_RUN_AS_NODE;
   delete env.VSCODE_IPC_HOOK_CLI;
   child = spawn(executable, [
