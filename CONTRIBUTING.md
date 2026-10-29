@@ -13,7 +13,7 @@ There are two main shipping surfaces:
 - `packages/cli`: a standalone REPL that talks to your buddy through the Anthropic Messages API and speaks replies with macOS `say`
 - `packages/vscode`: a VS Code extension that watches terminal output locally and speaks detected buddy lines
 
-Shared helpers live in `packages/shared`.
+CLI helpers ship inside `packages/cli/lib` so installed packages are self-contained.
 
 ## Before You Start
 
@@ -50,7 +50,7 @@ buddy-voice/
   packages/
     cli/        # standalone buddy REPL
     vscode/     # VS Code extension
-    shared/     # config loading, parser logic, TTS helpers
+    cli/lib/    # CLI config loading, conversation, TTS helpers
   demo/         # demo video and social preview assets
 ```
 
@@ -81,7 +81,7 @@ From the repo root:
 npm ci
 npm test
 npm run package:extension
-code --install-extension packages/vscode/frostwig-voice-1.0.0.vsix
+code --install-extension packages/vscode/frostwig-voice-1.0.1.vsix
 ```
 
 Then open VS Code, run Claude Code in a terminal, enable `/buddy`, and verify:

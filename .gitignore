@@ -6,3 +6,7 @@ out/
 .env
 packages/vscode/LICENSE
 packages/vscode/README.md
+
+*.tgz
+packages/cli/LICENSE
+packages/cli/README.md

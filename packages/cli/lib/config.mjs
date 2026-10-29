@@ -1,4 +1,4 @@
-// shared/config.mjs — reads ~/.claude.json companion field
+// cli/lib/config.mjs — reads ~/.claude.json companion field
 import { readFileSync, existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";

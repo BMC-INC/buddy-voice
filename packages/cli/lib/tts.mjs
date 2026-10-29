@@ -1,4 +1,4 @@
-// shared/tts.mjs — macOS say wrapper with speech queue
+// cli/lib/tts.mjs — macOS say wrapper with speech queue
 import { execSync, spawn } from "child_process";
 
 let queue = [];
