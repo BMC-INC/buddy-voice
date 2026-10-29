@@ -39,9 +39,12 @@ export class TerminalMonitor {
     private mode: 'terminal-data' | 'log-watcher' | 'none' = 'none';
     private logWatcher: fs.FSWatcher | null = null;
     private lastLogSize: number = 0;
+    private lastLogInode: number = 0;
+    private lastLogModified: number = 0;
     private logPath: string = '';
     private spokenTexts: Set<string> = new Set();
     private ready: boolean = false;
+    private readyTimer: ReturnType<typeof setTimeout> | null = null;
     private rawBuffer: string = '';
     private scanTimer: ReturnType<typeof setTimeout> | null = null;
     private static SCAN_DELAY_MS = 300; // wait for all chunks to arrive
@@ -70,7 +73,7 @@ export class TerminalMonitor {
             if (typeof onDidWrite !== 'function') return false;
 
             // Grace period: ignore the initial terminal buffer dump
-            setTimeout(() => {
+            this.readyTimer = setTimeout(() => {
                 this.parser.reset();
                 this.ready = true;
             }, 2000);
@@ -201,8 +204,13 @@ export class TerminalMonitor {
                 try {
                     const stat = fs.statSync(candidate);
                     this.lastLogSize = stat.size;
-                    this.logWatcher = fs.watch(candidate, (eventType) => {
-                        if (eventType === 'change') this.readNewLogContent();
+                    this.lastLogInode = stat.ino;
+                    this.lastLogModified = stat.mtimeMs;
+                    // Watch the directory so replacing/rotating the file does not detach us.
+                    this.logWatcher = fs.watch(path.dirname(candidate), () => {
+                        // macOS can report the directory name for a content change.
+                        // Always stat only our selected companion log.
+                        this.readNewLogContent();
                     });
                     return true;
                 } catch { continue; }
@@ -216,6 +224,13 @@ export class TerminalMonitor {
         if (!this.logPath) return;
         try {
             const stat = fs.statSync(this.logPath);
+            if (stat.ino !== this.lastLogInode || stat.size < this.lastLogSize ||
+                (stat.size === this.lastLogSize && stat.mtimeMs !== this.lastLogModified)) {
+                this.lastLogSize = 0;
+                this.parser.reset();
+            }
+            this.lastLogInode = stat.ino;
+            this.lastLogModified = stat.mtimeMs;
             if (stat.size <= this.lastLogSize) return;
 
             const fd = fs.openSync(this.logPath, 'r');
@@ -246,6 +261,8 @@ export class TerminalMonitor {
         this.disposables = [];
         if (this.scanTimer) { clearTimeout(this.scanTimer); this.scanTimer = null; }
         this.rawBuffer = '';
+        this.ready = false;
+        if (this.readyTimer) { clearTimeout(this.readyTimer); this.readyTimer = null; }
         if (this.logWatcher) {
             this.logWatcher.close();
             this.logWatcher = null;

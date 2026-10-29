@@ -81,7 +81,7 @@ Building and packaging requires **Node.js 22+** and npm. From the repository roo
 npm ci
 npm test
 npm run package:extension
-code --install-extension packages/vscode/frostwig-voice-1.0.0.vsix
+code --install-extension packages/vscode/frostwig-voice-1.0.1.vsix
 ```
 
 The package includes the extension, README, and MIT license. Use the `Frostwig`
@@ -115,8 +115,9 @@ Current code no longer writes that file; an existing file is not removed automat
 
 `npm test` compiles the extension and runs automated tests for parsing, request
 ordering and failure recovery, and speech queue behavior. `npm run package:extension`
-checks the distributable VSIX. These checks do not substitute for a live editor
-integration check or an authenticated API conversation.
+checks the distributable VSIX. A separate isolated smoke test also exercised activation, commands, and synthetic
+companion-log monitoring in VS Code 1.133.0 on macOS. Real terminal-output narration
+and authenticated Anthropic conversations still need environment-specific validation.
 
 See the [contribution guide](https://github.com/BMC-INC/buddy-voice/blob/main/CONTRIBUTING.md)
 for manual checks and project boundaries. Do not include real API keys, terminal
@@ -126,3 +127,44 @@ logs, or private companion configuration in public issues.
 
 [MIT](https://github.com/BMC-INC/buddy-voice/blob/main/LICENSE).
 Built by James Benton Jr. and [ExecLayer / BMC-INC](https://github.com/BMC-INC).
+
+## Install release artifacts
+
+The [GitHub releases page](https://github.com/BMC-INC/buddy-voice/releases) provides
+a self-contained CLI package and a VS Code VSIX. For version 1.0.1:
+
+```bash
+npm install --global https://github.com/BMC-INC/buddy-voice/releases/download/v1.0.1/buddy-voice-cli-1.0.1.tgz
+buddy-voice --help
+```
+
+Download `frostwig-voice-1.0.1.vsix` and choose **Extensions: Install from VSIX** in
+VS Code. A GitHub artifact release does not imply npm registry or Marketplace
+publication. The CLI still requires your Anthropic API key for conversations.
+
+The tag-triggered release workflow checks all package versions, runs the tests and
+security audit, and publishes artifacts plus SHA-256 checksums. Release tags must
+point to a reviewed commit whose version matches the tag. The package test installs
+the actual CLI tarball in an isolated directory before running it.
+
+### Build dependency exception
+
+The VSIX packaging tool currently pulls an affected MSAL authentication dependency.
+A temporary override selects patched `@azure/msal-node` 7.1.2 inside `@azure/identity`
+for [GHSA-xcx6-jx8p-x3h5](https://github.com/advisories/GHSA-xcx6-jx8p-x3h5).
+This crosses the upstream declared MSAL range and is limited to development tools;
+the CLI and VSIX have no npm runtime dependencies. Packaging, credential/client
+construction, and required method interfaces have been checked with Node 22+.
+Authenticated Azure/Marketplace publishing has not been validated. Remove the
+override when the publishing tool adopts a patched version and repeat the checks.
+
+For an isolated real-editor smoke check after compiling, run:
+
+```bash
+node scripts/test-editor.mjs "/Applications/Visual Studio Code.app/Contents/MacOS/Code"
+```
+
+It uses a temporary profile and a test-only home-directory lookup for synthetic companion logs,
+disables speech,
+and checks activation, commands, log append/truncation/rotation, and absence of
+legacy debug captures. It never reads the user's terminal contents or companion logs.

@@ -14,6 +14,10 @@ for (const model of [undefined, "account-selected-model"]) {
       const preload = join(directory, "mock-api.mjs");
       writeFileSync(preload, `
         import { writeFileSync } from "node:fs";
+        import os from "node:os";
+        import { syncBuiltinESMExports } from "node:module";
+        os.homedir = () => process.env.BUDDY_TEST_ROOT;
+        syncBuiltinESMExports();
         globalThis.fetch = async (url, options) => {
           if (url !== "https://api.anthropic.com/v1/messages") throw new Error("unexpected destination");
           if (!(options.signal instanceof AbortSignal)) throw new Error("missing request timeout");
@@ -21,7 +25,7 @@ for (const model of [undefined, "account-selected-model"]) {
           return { ok: true, json: async () => ({ content: [{ type: "text", text: "Hello from the test." }] }) };
         };
       `);
-      const env = { ...process.env, HOME: directory, ANTHROPIC_API_KEY: "synthetic-test-key", TEST_CAPTURE: capture };
+      const env = { ...process.env, BUDDY_TEST_ROOT: directory, ANTHROPIC_API_KEY: "synthetic-test-key", TEST_CAPTURE: capture };
       delete env.ANTHROPIC_MODEL;
       if (model) env.ANTHROPIC_MODEL = model;
       const result = spawnSync(process.execPath, ["--import", preload, fileURLToPath(new URL("../packages/cli/bin/frostwig.mjs", import.meta.url)), "--no-voice"], { env, input: "", encoding: "utf8", timeout: 10000 });

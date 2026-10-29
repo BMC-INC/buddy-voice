@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createConversation } from "../packages/shared/conversation.mjs";
+import { createConversation } from "../packages/cli/lib/conversation.mjs";
 
 test("a failed request does not leak an unanswered turn into the next exchange", async () => {
   const calls = [];

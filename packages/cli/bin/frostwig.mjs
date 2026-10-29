@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { createInterface } from "readline";
-import { createConversation } from "../../shared/conversation.mjs";
-import { loadBuddyConfig, getBuddyIdentity } from "../../shared/config.mjs";
-import { speak, setVoice, getVoice, setEnabled, isEnabled, hasTTS, listVoices } from "../../shared/tts.mjs";
+import { createConversation } from "../lib/conversation.mjs";
+import { loadBuddyConfig, getBuddyIdentity } from "../lib/config.mjs";
+import { speak, setVoice, getVoice, setEnabled, isEnabled, hasTTS, listVoices } from "../lib/tts.mjs";
 
 const args = process.argv.slice(2);
 const noVoice = args.includes("--no-voice") || args.includes("--silent");

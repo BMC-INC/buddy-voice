@@ -2,7 +2,7 @@
   "name": "frostwig-voice",
   "displayName": "Frostwig Voice - Talk to Your Claude Code Buddy",
   "description": "Give your Claude Code buddy a voice in VS Code. Detects buddy speech locally and speaks it with macOS TTS.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "execlayer",
   "license": "MIT",
   "repository": {
@@ -83,18 +83,6 @@
           "default": 180,
           "description": "Speech rate (words per minute)"
         },
-        "frostwig.volume": {
-          "type": "number",
-          "default": 1,
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Reserved for future voice backends. The native macOS say command does not expose per-call volume."
-        },
-        "frostwig.muteOnFocus": {
-          "type": "boolean",
-          "default": false,
-          "description": "Only speak when terminal is focused"
-        },
         "frostwig.buddyName": {
           "type": "string",
           "default": "",
@@ -104,11 +92,6 @@
           "type": "boolean",
           "default": true,
           "description": "Show VS Code notification with bubble text"
-        },
-        "frostwig.soundEffect": {
-          "type": "boolean",
-          "default": true,
-          "description": "Reserved for future voice polish. No chirp is currently played by the extension."
         }
       }
     }

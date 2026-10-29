@@ -1,6 +1,6 @@
 {
   "name": "buddy-voice-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Talk to your Claude Code buddy in a lightweight CLI with local macOS text-to-speech.",
   "bin": {
     "buddy-voice": "./bin/frostwig.mjs"
@@ -29,5 +29,14 @@
     "terminal",
     "anthropic",
     "macos"
-  ]
+  ],
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepack": "node ../../scripts/prepare-cli.mjs"
+  }
 }

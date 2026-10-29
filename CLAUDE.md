@@ -19,6 +19,7 @@ frostwig/
   packages/
     cli/
       bin/frostwig.mjs        # Interactive REPL, API calls, voice output
+      lib/                   # Packaged config, conversation and TTS helpers
       package.json
     vscode/
       src/
@@ -31,8 +32,6 @@ frostwig/
       package.json
       tsconfig.json
     shared/
-      tts.mjs                  # macOS say wrapper, speech queue
-      config.mjs               # Reads ~/.claude.json companion data
       parser.mjs               # Shared bubble text extraction
   package.json                 # npm workspace root
   README.md
