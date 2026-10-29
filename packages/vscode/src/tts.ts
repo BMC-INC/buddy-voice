@@ -1,4 +1,4 @@
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, ChildProcess } from 'child_process';
 import * as vscode from 'vscode';
 
 export class TTSEngine {
@@ -8,7 +8,7 @@ export class TTSEngine {
     private muted: boolean = false;
     private voice: string = 'Daniel';
     private rate: number = 150;
-    private speakingTimeout: ReturnType<typeof setTimeout> | null = null;
+    private currentProcess: ChildProcess | null = null;
 
     constructor() {
         this.loadSettings();
@@ -18,7 +18,8 @@ export class TTSEngine {
         const config = vscode.workspace.getConfiguration('frostwig');
         this.enabled = config.get('enabled', true);
         this.voice = config.get('voice', 'Daniel');
-        this.rate = config.get('rate', 150);
+        this.rate = config.get('rate', 180);
+        if (!this.enabled) this.clearQueue();
     }
 
     speak(text: string): void {
@@ -28,7 +29,7 @@ export class TTSEngine {
     }
 
     private processQueue(): void {
-        if (this.speaking || this.queue.length === 0) return;
+        if (!this.enabled || this.muted || this.speaking || this.queue.length === 0) return;
         this.speaking = true;
         const text = this.queue.shift()!;
         // Strip action/emote text wrapped in asterisks (e.g. *flaps excitedly*)
@@ -42,41 +43,37 @@ export class TTSEngine {
             .replace(/\s{2,}/g, ' ')
             .trim();
 
-        // Failsafe: reset speaking flag after 15s in case process events never fire
-        if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
-        this.speakingTimeout = setTimeout(() => {
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            this.currentProcess = null;
             this.speaking = false;
             this.processQueue();
-        }, 15000);
-
+        };
         try {
-            const proc = spawn('/usr/bin/say', ['-v', this.voice, '-r', String(this.rate), cleaned]);
-            proc.on('close', () => {
-                if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
-                this.speaking = false;
-                this.processQueue();
+            const proc = spawn('/usr/bin/say', ['-v', this.voice, '-r', String(this.rate)], {
+                stdio: ['pipe', 'ignore', 'ignore'],
             });
-            proc.on('error', () => {
-                if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
-                this.speaking = false;
-                this.processQueue();
-            });
+            this.currentProcess = proc;
+            proc.once('close', finish);
+            proc.once('error', finish);
+            proc.stdin?.on('error', () => {});
+            proc.stdin?.end(cleaned);
         } catch {
-            if (this.speakingTimeout) clearTimeout(this.speakingTimeout);
-            this.speaking = false;
-            this.processQueue();
+            finish();
         }
     }
 
     setVoice(voice: string): void { this.voice = voice; }
-    setEnabled(enabled: boolean): void { this.enabled = enabled; }
-    setMuted(muted: boolean): void { this.muted = muted; }
+    setEnabled(enabled: boolean): void { this.enabled = enabled; if (!enabled) this.clearQueue(); }
+    setMuted(muted: boolean): void { this.muted = muted; if (muted) this.clearQueue(); }
     isEnabled(): boolean { return this.enabled; }
     isMuted(): boolean { return this.muted; }
     getVoice(): string { return this.voice; }
 
     toggleVoice(): boolean {
-        this.enabled = !this.enabled;
+        this.setEnabled(!this.enabled);
         return this.enabled;
     }
 
@@ -100,5 +97,6 @@ export class TTSEngine {
 
     clearQueue(): void {
         this.queue = [];
+        this.currentProcess?.kill();
     }
 }

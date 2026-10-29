@@ -73,7 +73,6 @@ export class TerminalMonitor {
             setTimeout(() => {
                 this.parser.reset();
                 this.ready = true;
-                this.debugFile('READY: grace period ended, now listening');
             }, 2000);
 
             const disposable = onDidWrite((e: { terminal: vscode.Terminal; data: string }) => {
@@ -98,12 +97,6 @@ export class TerminalMonitor {
         }
     }
 
-    private debugFile(msg: string): void {
-        try {
-            const p = path.join(os.homedir(), 'frostwig-debug.log');
-            fs.appendFileSync(p, `${new Date().toISOString()} ${msg}\n`);
-        } catch { /* ignore */ }
-    }
 
     /**
      * Scan raw terminal data for box-drawing speech bubbles.
@@ -124,8 +117,6 @@ export class TerminalMonitor {
 
         if (!hasTopCorner || !hasBottomCorner || !hasVerticalBorder) return;
 
-        this.debugFile(`RAW HIT: chunk has box chars (len=${data.length})`);
-        this.debugFile(`STRIPPED(300): "${stripped.substring(0, 300).replace(/\n/g, '\\n')}"`);
 
         // Verify the chunk has a complete bubble (top + bottom border)
         const topRe = /[┌╭┏╔][\s─━═┄┈]+[┐╮┓╗]/;
@@ -170,22 +161,18 @@ export class TerminalMonitor {
         // Skip if only emotes remain (e.g. "*waddles closer*")
         const withoutEmotes = bubbleText.replace(/\*[^*]+\*/g, '').trim();
         if (!withoutEmotes || withoutEmotes.length < 3) {
-            this.debugFile(`SKIP EMOTE-ONLY: "${bubbleText.substring(0, 60)}"`);
             return;
         }
 
         // Skip if too short after cleanup (likely UI fragments)
         if (bubbleText.length < 4) {
-            this.debugFile(`SKIP SHORT: "${bubbleText}"`);
             return;
         }
 
-        this.debugFile(`RAW BUBBLE: "${bubbleText}" (${bubbleLines.length} lines)`);
 
         // Dedup: don't speak the same text twice
         const key = bubbleText.trim();
         if (!key || this.spokenTexts.has(key)) {
-            this.debugFile(`DEDUP: already spoken "${key.substring(0, 50)}"`);
             return;
         }
 
@@ -195,7 +182,6 @@ export class TerminalMonitor {
             if (first !== undefined) this.spokenTexts.delete(first);
         }
 
-        this.debugFile(`SPOKE: "${key}" (pattern: raw-bubble)`);
         this.callback({ text: bubbleText, pattern: 'bubble' });
     }
 
@@ -208,21 +194,6 @@ export class TerminalMonitor {
             path.join(claudeDir, 'companion.log'),
         ];
 
-        const logsDir = path.join(claudeDir, 'logs');
-        if (fs.existsSync(logsDir)) {
-            try {
-                const files = fs.readdirSync(logsDir)
-                    .filter(f => f.endsWith('.log'))
-                    .map(f => ({
-                        name: f,
-                        mtime: fs.statSync(path.join(logsDir, f)).mtime.getTime()
-                    }))
-                    .sort((a, b) => b.mtime - a.mtime);
-                if (files.length > 0) {
-                    logCandidates.push(path.join(logsDir, files[0].name));
-                }
-            } catch { /* ignore */ }
-        }
 
         for (const candidate of logCandidates) {
             if (fs.existsSync(candidate)) {
@@ -238,21 +209,7 @@ export class TerminalMonitor {
             }
         }
 
-        try {
-            this.logWatcher = fs.watch(claudeDir, (_eventType, filename) => {
-                if (filename && (filename.includes('buddy') || filename.includes('companion'))) {
-                    const filePath = path.join(claudeDir, filename);
-                    if (fs.existsSync(filePath)) {
-                        this.logPath = filePath;
-                        this.lastLogSize = 0;
-                        this.readNewLogContent();
-                    }
-                }
-            });
-            return true;
-        } catch {
-            return false;
-        }
+        return false;
     }
 
     private readNewLogContent(): void {

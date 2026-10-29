@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Give your Claude Code buddy a real voice with local macOS text-to-speech.",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "author": "James Benton Jr.",
   "license": "MIT",
   "repository": {
@@ -23,5 +25,13 @@
     "vscode-extension",
     "cli",
     "macos"
-  ]
+  ],
+  "scripts": {
+    "compile": "npm run compile --workspace frostwig-voice",
+    "test": "npm run compile && node --test tests/*.test.mjs",
+    "package:extension": "npm run package --workspace frostwig-voice -- --no-dependencies"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

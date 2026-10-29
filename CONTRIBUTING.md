@@ -38,7 +38,7 @@ Those files explain the product boundaries and the design rules for the codebase
 From the repo root:
 
 ```bash
-npm install
+npm ci
 ```
 
 That installs workspace dependencies for the monorepo.
@@ -63,7 +63,7 @@ From the repo root:
 ```bash
 cd packages/cli
 npm link
-export ANTHROPIC_API_KEY=sk-ant-...
+ # Set ANTHROPIC_API_KEY using your usual secret-management method.
 buddy-voice
 ```
 
@@ -78,11 +78,10 @@ Useful checks while working on the CLI:
 From the repo root:
 
 ```bash
-cd packages/vscode
-npm install
-npm run compile
-npx vsce package
-code --install-extension frostwig-voice-1.0.0.vsix
+npm ci
+npm test
+npm run package:extension
+code --install-extension packages/vscode/frostwig-voice-1.0.0.vsix
 ```
 
 Then open VS Code, run Claude Code in a terminal, enable `/buddy`, and verify:
@@ -115,16 +114,15 @@ If you were not able to test something, say that clearly.
 
 ## Testing Expectations
 
-This repo does not currently have a full automated test suite.
+Run `npm test` for parser, speech queue, and request-history regression tests.
+Run `npm run package:extension` to verify the VSIX, including its README and license.
+Node.js 22+ is required for the extension development toolchain.
 
-For now, manual verification is part of the contribution:
-
-- run the CLI help command
-- exercise the command paths you changed
-- compile the VS Code extension if you touched extension code
-- verify the README commands you changed still match reality
-
-If you add automation, keep it lightweight and useful.
+For a voice or editor change, also check the CLI help and relevant command paths,
+then manually verify speech and mute behavior on macOS. Test the editor integration
+only in an editor exposing the terminal-data capability or with a named companion
+log. Record the editor version and any unsupported capability. Automated tests use
+synthetic data and do not make paid API calls.
 
 ## Style Notes
 
@@ -139,7 +137,6 @@ If you add automation, keep it lightweight and useful.
 - cross-platform TTS support
 - parser coverage for future buddy UI variations
 - more voice samples or demo assets
-- a small automated regression harness for bubble parsing
 
 ## Questions
 

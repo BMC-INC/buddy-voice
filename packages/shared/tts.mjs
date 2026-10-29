@@ -3,11 +3,12 @@ import { execSync, spawn } from "child_process";
 
 let queue = [];
 let speaking = false;
+let currentProcess = null;
 let currentVoice = "Samantha";
 let enabled = true;
 
 function processQueue() {
-  if (speaking || queue.length === 0) return;
+  if (!enabled || speaking || queue.length === 0) return;
   speaking = true;
   const text = queue.shift();
   // Strip chars that macOS say vocalizes literally, and collapse
@@ -18,21 +19,25 @@ function processQueue() {
     .replace(/\s[.,!?;:]\s/g, " ")
     .trim();
 
-  try {
-    const proc = spawn("say", ["-v", currentVoice, "-r", "180", cleaned], {
-      stdio: "ignore",
-    });
-    proc.on("close", () => {
-      speaking = false;
-      processQueue();
-    });
-    proc.on("error", () => {
-      speaking = false;
-      processQueue();
-    });
-  } catch {
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    currentProcess = null;
     speaking = false;
     processQueue();
+  };
+  try {
+    const proc = spawn("say", ["-v", currentVoice, "-r", "180"], {
+      stdio: ["pipe", "ignore", "ignore"],
+    });
+    currentProcess = proc;
+    proc.once("close", finish);
+    proc.once("error", finish);
+    proc.stdin.on("error", () => {});
+    proc.stdin.end(cleaned);
+  } catch {
+    finish();
   }
 }
 
@@ -52,6 +57,7 @@ export function getVoice() {
 
 export function setEnabled(val) {
   enabled = val;
+  if (!enabled) clearQueue();
 }
 
 export function isEnabled() {
@@ -60,6 +66,7 @@ export function isEnabled() {
 
 export function clearQueue() {
   queue = [];
+  currentProcess?.kill();
 }
 
 export function hasTTS() {

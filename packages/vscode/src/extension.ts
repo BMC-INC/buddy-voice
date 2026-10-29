@@ -24,7 +24,14 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     const mode = monitor.start();
-    vscode.window.setStatusBarMessage(`Frostwig: monitoring via ${mode}`, 3000);
+    if (mode === 'none') {
+        vscode.window.showWarningMessage(
+            'Frostwig: terminal output monitoring is unavailable in this editor. ' +
+            'Use the CLI or the documented instruction-based setup.'
+        );
+    } else {
+        vscode.window.setStatusBarMessage(`Frostwig: monitoring via ${mode}`, 3000);
+    }
     context.subscriptions.push({ dispose: () => monitor.dispose() });
 
     context.subscriptions.push(
